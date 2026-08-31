@@ -22,7 +22,18 @@ Kiana Faia - **Visual Dashboard & Analytics**
 
 
 Monal Iyer:
+**Social Activity Feed & Notifications**
+FrontEnd:
 
+Shared group activity feed UI; Real-time log feed updates; Milestone notification toasts.
+
+BackEnd:
+
+Group completion feed aggregation; Automated email notification service for milestone accomplishments.
+
+DB:
+
+Feed activity scheme; Notification queue & event triggers.
 
 
 Yingisani Mabaso - **Authentication Security and Admin**
