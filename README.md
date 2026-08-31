@@ -11,7 +11,7 @@ Shahd Ahmed:
 
 David Engles:
 
-
+Implement database CRUD operations using PostgreSQL or MongoDB for creating, editing, and archiving habits with quantitative targets (e.g., minutes, pages). Program the active streak calculation logic.
 
 Kiana Faia:
 
@@ -41,10 +41,6 @@ Build the visual dashboard to display current completion streaks and habit histo
 Backend Lead(Social):
 
 Manage backend data logic linking users to 3-5 person accountability micro-groups and aggregate data for the shared activity feed. Set up the automated email notification system for group milestones.
-
-Backend Developer(Core Engine):
-
-Implement database CRUD operations using PostgreSQL or MongoDB for creating, editing, and archiving habits with quantitative targets (e.g., minutes, pages). Program the active streak calculation logic.
 
 Security adn Admin Lead:
 
