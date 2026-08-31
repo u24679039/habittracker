@@ -11,7 +11,20 @@ Shahd Ahmed:
 
 David Engles:
 
-Implement database CRUD operations using PostgreSQL or MongoDB for creating, editing, and archiving habits with quantitative targets (e.g., minutes, pages). Program the active streak calculation logic.
+DevOps & scrum Master: manage Git, page speed performance(<2secs), task boards in Jira and perform backlog refinement.
+
+Habit Management & Streak Engine:
+FrontEnd:
+
+Add/edit/archive habit forms ; Quantative target inputs(minutes/pages); snooze/rest day UI toggles
+
+BackEnd:
+
+CRUD business logic for habits; Active streak calculation algos; Habit state machine logic.
+
+DB:
+
+Habit and target scheme; habit status CRUD endpoints; streak logs.
 
 Kiana Faia:
 
@@ -24,28 +37,58 @@ Monal Iyer:
 Yingisani Mabaso:
 
 
+Full Stack Team Role Slice:
+
+Authentication Security and Admin:
+FrontEnd:
+
+Login+Registration; User Profile Settings;Admin Moderation panel
+
+BackEnd:
+
+JWT authentication & session handling; Bcrypt password hashing; POPIA compliant deletion and security.
+
+DB:
+
+Admin moderation flags; Auth endpoints; User and roles scheme
 
 
-Team Roles:
-Responsibilities:
 
+Visual Dashboard & Analytics:
+FrontEnd:
 
-Frontend Developer (UI/UX & groups):
+Responsive progress dashboard; habit history & completion charts; PDF/CSV export UI
 
-Develop the shared feed, micro-group invite interfaces, and the habit "snooze" toggle. Ensure the entire UI meets WCAG 2.1 AA accessibility standards and functions as a mobile-friendly Progressive Web Application (PWA).
+BackEnd:
 
-Frontend Developer(Dashboard):
+Data aggregation services for metrics; PDF/CSV document generation engine.
 
-Build the visual dashboard to display current completion streaks and habit history. Implement the low-priority monthly PDF or CSV analytics export for personal archiving.
+DB:
 
-Backend Lead(Social):
+Analytics endpoints; Historiacal logging queries; User stats scheme aggregation.
 
-Manage backend data logic linking users to 3-5 person accountability micro-groups and aggregate data for the shared activity feed. Set up the automated email notification system for group milestones.
+Micro-Group & Invite System:
+FrontEnd:
 
-Security adn Admin Lead:
+Group creation veiw; Join group via invite code veiw; Group settings & peer list management.
 
-Implement JWT session management, Bcrypt password hashing, and protection against XSS and SQL injection. Build the admin review tools for flagged groups and ensure account deletion complies with POPIA data privacy regulations.
+BackEnd:
 
-DevOps & Scrum Master(Rotating?):
+Unique invite code generator and validation; Group memberships constraints & access control.
 
-Manage Git continuous integration, configure public cloud deployment (e.g., Heroku, Vercel), and facilitate backlog refinement in Jira.
+DB:
+
+Group & membership scheme; Group CRUD & Join endpoints.
+
+Social Activity Feed & Notifications:
+FrontEnd:
+
+Shared group activity feed UI; Real-time log feed updates; Milestone notification toasts.
+
+BackEnd:
+
+Group completion feed aggregation; Automated email notification service for milestone accomplishments.
+
+DB:
+
+Feed activity scheme; Notification queue & event triggers.
