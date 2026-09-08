@@ -1,0 +1,46 @@
+// Prisma Client configuration
+generator client {
+  provider = "prisma-client-js"
+}
+
+// PostgreSQL database configuration
+datasource db {
+  provider = "postgresql"
+}
+
+// Stores information about each accountability group
+model AccountabilityGroup {
+  groupId        Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  invitationCode String   @unique
+  maxMembers     Int
+  creationDate   DateTime @default(now())
+  status         String
+
+  memberships    GroupMembership[]
+}
+
+// Defines the roles a member can have in a group
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+// Represents a user's membership in an accountability group
+model GroupMembership {
+  membershipId Int       @id @default(autoincrement())
+
+  // Connect userID to the shared user model later when teh model is availbale++++++++++++++++++++++++++++++++++++
+  userId       Int
+
+  groupId      Int
+  joinedAt     DateTime  @default(now())
+  role         GroupRole
+
+  // Relate it to the AccountabilityGroup model
+  group        AccountabilityGroup @relation(fields: [groupId], references: [groupId])
+
+  // Prevent the same user from joining the same group more than once
+  @@unique([userId, groupId])
+}
