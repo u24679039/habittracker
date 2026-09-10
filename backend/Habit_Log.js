@@ -23,8 +23,8 @@ class HabitLog {
     }
     update(value,status,note){
         this.#value=value;
-        this.#status=this.#status;
-        this.#note=this.#note;
+        this.#status=status;
+        this.#note=note;
         return true;
     }
     isCompleted(){
@@ -36,6 +36,10 @@ class HabitLog {
     }
     isSnoozed(){
         return this.#status === "Snoozed";
+
+    }
+    isMissed(){
+        return this.#status === "Missed";
 
     }
 }
