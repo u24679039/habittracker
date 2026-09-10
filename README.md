@@ -43,3 +43,8 @@ to create GUI to go check backend-DB
 npx prisma@7.10.0 studio
 to start frontEnd terminal 
 node Habit_Tracker.js
+
+To Update Git repo on local 
+ git fetch origin --prune
+ display with 
+ git branch -r
