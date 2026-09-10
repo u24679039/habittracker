@@ -20,18 +20,7 @@ Thumbs.db
 #AI agent and IDE config
 
 .AgentsAndConfig/
-prisma.config.ts
-
-Client_Front/public/favicon.svg
-Client_Front/public/icons.svg
-Client_Front/src/assets/hero.png
-Client_Front/vite.config.js
-Client_Front/index.html
-Client_Front/eslint.config.js
-Client_Front/src/assets/react.svg
-Client_Front/src/assets/vite.svg
 Server_Back/AgentsAndConfig/.agents/skills/prisma-composer-core-concepts/SKILL.md
-.gitignore
 Server_Back/AgentsAndConfig/.claude/skills/prisma-composer-core-concepts/SKILL.md
 Server_Back/AgentsAndConfig/.cursor/skills/prisma-composer-core-concepts/SKILL.md
 Server_Back/AgentsAndConfig/.devin/skills/prisma-composer-core-concepts/SKILL.md
