@@ -22,5 +22,5 @@ Thumbs.db
 .claude/
 .cursor/
 .devin/
-
+.AgentsAndConfig/
 prisma.config.ts
