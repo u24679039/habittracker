@@ -2,7 +2,7 @@
   "dependencies": {
     "@prisma/client": "^7.10.0"
   },
-  "devDependencies": {
-    "prisma": "^8.0.0-rc.13"
+   "devDependencies": {
+    "prisma": "^7.10.0"
   }
 }

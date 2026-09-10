@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+//Auth
+model User{
+  id String @id @default(uuid())
+  email String @unique
+  password String
+  name String
+  CreatedAt DateTime @default(now())
+  habits Habit[]
+  logs HabitLog[]
+  groups GroupMember[]
+  posts Post[]
+
+  
+}
+//habits
+model Habit{
+  id String @id @default(uuid())
+  title String
+  description String?
+  frequency String @default("daily")
+  userId String
+  user User @relation(fields: [userId],references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  logs HabitLog[] 
+}
+//analytics and logs 
+model HabitLog{
+  is String @id @default(uuid())
+  completedAt DateTime @default(now())
+  habitId String
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+// Groups
+model Group{
+id String @id @default(uuid())
+  name String
+  description String?
+  createdAt DateTime @default(now())
+
+  members GroupMember[]
+}
+
+
+model GroupMember{
+  id String @id @default(uuid())
+  userId String
+  groupId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  @@unique([userId, groupId])
+
+}
+// Social feed
+model Post {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
