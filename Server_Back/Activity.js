@@ -31,4 +31,4 @@ class Activity {
     }
 
 }
-GPUShaderModule.exports = Activity;
+module.exports = Activity;

@@ -37,6 +37,9 @@ Yingisani Mabaso - **Authentication Security and Admin**
 2. BackEnd: JWT authentication & session handling; Bcrypt password hashing; POPIA compliant deletion and security.
 3. DB: Admin moderation flags; Auth endpoints; User and roles scheme
 
-
-
-
+in Server_Back
+Shortcuts
+to create GUI to go check backend-DB
+npx prisma@7.10.0 studio
+to start frontEnd terminal 
+node Habit_Tracker.js
