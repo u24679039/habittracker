@@ -16,3 +16,11 @@ client/build/
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+#AI agent and IDE config
+.agents/
+.claude/
+.cursor/
+.devin/
+
+prisma.config.ts
