@@ -21,3 +21,17 @@ Thumbs.db
 
 .AgentsAndConfig/
 prisma.config.ts
+backend/AgentsAndConfig/.agents/skills/prisma-composer-core-concepts/SKILL.md
+backend/AgentsAndConfig/.claude/skills/prisma-composer-core-concepts/SKILL.md
+backend/AgentsAndConfig/.cursor/skills/prisma-composer-core-concepts/SKILL.md
+backend/AgentsAndConfig/.devin/skills/prisma-composer-core-concepts/SKILL.md
+FrontEnd/eslint.config.js
+FrontEnd/vite.config.js
+FrontEnd/public/icons.svg
+FrontEnd/public/favicon.svg
+FrontEnd/src/index.css
+FrontEnd/index.html
+FrontEnd/src/assets/hero.png
+FrontEnd/src/assets/react.svg
+FrontEnd/src/assets/vite.svg
+FrontEnd/src/App.css
