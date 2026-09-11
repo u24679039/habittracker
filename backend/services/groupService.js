@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const prisma = require("../prismaClient");
 
 // generate a random 6-character alphanumeric invitation code
 function generateInviteCode()
@@ -17,7 +18,31 @@ function generateInviteCode()
     return code;
 }
 
+
+// ensure the generated invitation code is unique
+async function generateUniqueInviteCode()
+{
+    let code;
+    let existingGroup;
+
+    do
+    {
+        code = generateInviteCode();
+
+        existingGroup = await prisma.accountabilityGroup.findUnique({
+            where: {
+                invitationCode: code
+            }
+        });
+    }
+    while (existingGroup);
+
+    return code;
+}
+
+
 module.exports =
 {
-    generateInviteCode
+    generateInviteCode,
+    generateUniqueInviteCode
 };
