@@ -14,7 +14,8 @@ const prismaMock =
 
 const {
     generateInviteCode,
-    generateUniqueInviteCode
+    generateUniqueInviteCode,
+    validateInviteCode
 } = proxyquire("../services/groupService",
 {
     "../prismaClient": prismaMock
@@ -78,5 +79,54 @@ describe("generateUniqueInviteCode", function()
 
         assert.strictEqual(findUniqueStub.callCount, 1);
         assert.match(code, /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/);
+    });
+});
+
+
+
+// test invitation code validation
+describe("validateInviteCode", function()
+{
+    beforeEach(function()
+    {
+        findUniqueStub.reset();
+    });
+
+    it("should return true for an existing invitation code", async function()
+    {
+        // simulate an existing group
+        findUniqueStub.resolves({ groupId: 1 });
+
+        const result = await validateInviteCode("GRP234");
+
+        assert.strictEqual(result, true);
+        assert.strictEqual(findUniqueStub.callCount, 1);
+    });
+
+    it("should return false for a non-existing invitation code", async function()
+    {
+        // simulate no matching group
+        findUniqueStub.resolves(null);
+
+        const result = await validateInviteCode("ABC234");
+
+        assert.strictEqual(result, false);
+        assert.strictEqual(findUniqueStub.callCount, 1);
+    });
+
+    it("should return false for an invalid invitation code format", async function()
+    {
+        const result = await validateInviteCode("INVALID");
+
+        assert.strictEqual(result, false);
+        assert.strictEqual(findUniqueStub.callCount, 0);
+    });
+
+    it("should return false when no invitation code is provided", async function()
+    {
+        const result = await validateInviteCode("");
+
+        assert.strictEqual(result, false);
+        assert.strictEqual(findUniqueStub.callCount, 0);
     });
 });

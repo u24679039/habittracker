@@ -41,8 +41,36 @@ async function generateUniqueInviteCode()
 }
 
 
+
+
+
+// check whether the invitation code belongs to an existing group
+async function validateInviteCode(invitationCode)
+{
+    if (!invitationCode)
+    {
+        return false;
+    }
+
+    // reject codes that do not match the required format
+    if (!/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/.test(invitationCode))
+    {
+        return false;
+    }
+
+    // check whether the exact invitation code exists
+    const existingGroup = await prisma.accountabilityGroup.findUnique({
+        where: {
+            invitationCode: invitationCode
+        }
+    });
+
+    return existingGroup !== null;
+}
+
 module.exports =
 {
     generateInviteCode,
-    generateUniqueInviteCode
+    generateUniqueInviteCode,
+    validateInviteCode
 };
