@@ -15,8 +15,10 @@ model AccountabilityGroup {
   description    String?
   invitationCode String   @unique
   maxMembers     Int
+  creatorId      Int
   creationDate   DateTime @default(now())
-  status         String
+  isPublic       Boolean
+  isActive       Boolean
 
   memberships    GroupMembership[]
 }
