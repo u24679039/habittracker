@@ -1,4 +1,10 @@
-const { register, login } = require("./authService");
+const {
+  register,
+  login,
+  updateProfile,
+  deleteAccount,
+  users
+} = require("./authService");
 
 async function runTests() {
   console.log("TEST 1: Valid registration");
@@ -35,6 +41,24 @@ async function runTests() {
   console.log(
     await register("", "newuser@example.com", "Password123")
   );
+
+  console.log("\nTEST 8: Update profile");
+  console.log(
+    updateProfile(1, {
+      name: "Yingisani Mabaso"
+    })
+  );
+
+  console.log("\nUSER AFTER PROFILE UPDATE");
+  console.log(users[0]);
+
+  console.log("\nTEST 9: Delete account");
+  console.log(
+    deleteAccount(1)
+  );
+
+  console.log("\nUSERS AFTER DELETION");
+  console.log(users);
 }
 
 runTests();

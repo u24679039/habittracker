@@ -1,28 +1,23 @@
 // authService.js
 // Part of: Authentication, Security & Admin (Yingisani Mabaso)
-// Handles basic user registration and login authentication.
+// Handles user registration, login, profile updates and account deletion.
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 // Temporary user storage.
-// This will later be replaced by the PostgreSQL/Prisma database.
+// This will later be replaced by PostgreSQL/Prisma.
 const users = [];
 
-// Secret used to create JWT tokens.
-// Later this should be stored securely in an environment variable.
+// Temporary JWT secret.
+// Later this should be stored in an environment variable.
 const JWT_SECRET = "habittracker_secret";
+
 
 /**
  * Registers a new user.
- *
- * @param {string} name
- * @param {string} email
- * @param {string} password
- * @returns {Promise<object>}
  */
 async function register(name, email, password) {
-  // Check that all required information was provided.
   if (!name || !email || !password) {
     return {
       success: false,
@@ -30,8 +25,9 @@ async function register(name, email, password) {
     };
   }
 
-  // Check whether the email is already registered.
-  const existingUser = users.find((user) => user.email === email);
+  const existingUser = users.find(
+    (user) => user.email === email
+  );
 
   if (existingUser) {
     return {
@@ -40,8 +36,6 @@ async function register(name, email, password) {
     };
   }
 
-  // Never store the original password.
-  // bcrypt converts it into a secure password hash.
   const passwordHash = await bcrypt.hash(password, 10);
 
   const user = {
@@ -61,12 +55,9 @@ async function register(name, email, password) {
   };
 }
 
+
 /**
  * Logs a user into the system.
- *
- * @param {string} email
- * @param {string} password
- * @returns {Promise<object>}
  */
 async function login(email, password) {
   if (!email || !password) {
@@ -76,7 +67,9 @@ async function login(email, password) {
     };
   }
 
-  const user = users.find((user) => user.email === email);
+  const user = users.find(
+    (user) => user.email === email
+  );
 
   if (!user) {
     return {
@@ -97,7 +90,6 @@ async function login(email, password) {
     };
   }
 
-  // Create a token proving that this user successfully logged in.
   const token = jwt.sign(
     {
       userId: user.id,
@@ -116,8 +108,78 @@ async function login(email, password) {
   };
 }
 
+
+/**
+ * Updates a user's profile.
+ */
+function updateProfile(userId, updates) {
+  const user = users.find(
+    (user) => user.id === userId
+  );
+
+  if (!user) {
+    return {
+      success: false,
+      message: "User not found."
+    };
+  }
+
+  if (updates.name) {
+    user.name = updates.name;
+  }
+
+  if (updates.email) {
+    const emailTaken = users.find(
+      (existingUser) =>
+        existingUser.email === updates.email &&
+        existingUser.id !== userId
+    );
+
+    if (emailTaken) {
+      return {
+        success: false,
+        message: "Email is already in use."
+      };
+    }
+
+    user.email = updates.email;
+  }
+
+  return {
+    success: true,
+    message: "Profile updated successfully."
+  };
+}
+
+
+/**
+ * Deletes a user's account.
+ */
+function deleteAccount(userId) {
+  const userIndex = users.findIndex(
+    (user) => user.id === userId
+  );
+
+  if (userIndex === -1) {
+    return {
+      success: false,
+      message: "User not found."
+    };
+  }
+
+  users.splice(userIndex, 1);
+
+  return {
+    success: true,
+    message: "Account deleted successfully."
+  };
+}
+
+
 module.exports = {
   register,
   login,
+  updateProfile,
+  deleteAccount,
   users
 };
