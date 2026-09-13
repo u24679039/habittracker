@@ -1,5 +1,6 @@
 const express = require('express');
 const AnalyticsService = require('../services/analyticsService');
+const ExportService = require('../services/exportService');
 const prisma = require('../db/prismaClient');
 
 const router = express.Router();
@@ -44,6 +45,44 @@ router.get('/heatmap', async (req, res, next) => {
 router.get('/breakdown', async (req, res, next) => {
   try {
     res.json(await analytics.getPerHabitBreakdown(resolveUserId(req)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/export.csv', async (req, res, next) => {
+  try {
+    const rows = await analytics.getPerHabitBreakdown(resolveUserId(req));
+    const csv = ExportService.toCsv(rows);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('habitforge-analytics.csv');
+    res.send(csv);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/export.pdf', async (req, res, next) => {
+  try {
+    const userId = resolveUserId(req);
+    const month = req.query.month || new Date().toISOString().slice(0, 7);
+    const [summary, perHabit] = await Promise.all([
+      analytics.getSummaryStats(userId),
+      analytics.getPerHabitBreakdown(userId),
+    ]);
+
+    const pdfBuffer = await ExportService.toPdf({
+      userName: req.query.userName || `User ${userId}`,
+      month,
+      currentStreak: summary.currentStreak,
+      highestStreak: summary.highestStreak,
+      avgCompletion: summary.avgCompletion,
+      perHabit,
+    });
+
+    res.header('Content-Type', 'application/pdf');
+    res.attachment('habitforge-analytics.pdf');
+    res.send(pdfBuffer);
   } catch (err) {
     next(err);
   }

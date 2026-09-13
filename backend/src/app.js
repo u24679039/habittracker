@@ -16,6 +16,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' })); // automated platf
 // so validation errors (bad userId, bad date range, etc.) surface as a
 // clean 4xx JSON response instead of an unhandled promise rejection / stack trace.
 app.use((err, req, res, next) => {
+  // console.error(err);
   const status = err.status || 500;
   res.status(status).json({ error: err.message });
 });
