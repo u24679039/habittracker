@@ -55,7 +55,7 @@ router.get('/export.csv', async (req, res, next) => {
     const rows = await analytics.getPerHabitBreakdown(resolveUserId(req));
     const csv = ExportService.toCsv(rows);
     res.header('Content-Type', 'text/csv');
-    res.attachment('habitforge-analytics.csv');
+    res.attachment('habittracker-analytics.csv');
     res.send(csv);
   } catch (err) {
     next(err);
@@ -81,7 +81,7 @@ router.get('/export.pdf', async (req, res, next) => {
     });
 
     res.header('Content-Type', 'application/pdf');
-    res.attachment('habitforge-analytics.pdf');
+    res.attachment('habittracker-analytics.pdf');
     res.send(pdfBuffer);
   } catch (err) {
     next(err);

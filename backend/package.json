@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Dashboard & Analytics workstream backend for HabitTracker (EPE 321, Group 11)",
   "main": "src/server.js",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
     "postinstall": "prisma generate",
     "start": "node src/server.js",
