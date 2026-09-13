@@ -1,16 +1,25 @@
 {
-  "name": "backend",
+  "name": "habittracker-dashboard-analytics-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "milestoneService.js",
+  "description": "Dashboard & Analytics workstream backend for HabitTracker (EPE 321, Group 11)",
+  "main": "src/server.js",
   "scripts": {
-    "test": "jest"
+    "postinstall": "prisma generate",
+    "start": "node src/server.js",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "dependencies": {
+    "@prisma/client": "^5.19.0",
+    "express": "^4.19.2", 
+    "json2csv": "^6.0.0-alpha.2",
+    "pdfkit": "^0.15.0"
+  },
   "devDependencies": {
-    "jest": "^30.5.1"
+    "prisma": "^5.19.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
   }
 }

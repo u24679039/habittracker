@@ -1,42 +1,92 @@
-# Group 11- Habit Tracker
+# HabitTracker (Group 11) — Dashboard & Analytics Workstream
 
+This branch covers the **Visual Dashboard & Analytics** slice of HabitTracker
+(front end, back end, and database queries), per the group design document.
+It's built and tested standalone, ahead of Sprint 3 integration.
 
-The team will work in 3 two week sprints from 31/08/2026 to the 14/09/2026 and from the 14/09/2026 to the 28/09/2026 and finally completing the project from 28/09/2026 to the 19/10/2026. 
+## Scope for this demo (Progress Demo Sprint, 31/08–14/09)
 
-The work load will be split between the five members as such:
+Implements the `Dashboard` UML class in full, plus the supporting
+`AnalyticsService` and `ExportService` needed for the Analytics page (Fig.
+24) and the low-priority CSV/PDF export user story:
 
-Shahd Ahmed - **Micro-Group & Invite System**
+- `Dashboard.getCurrentStreaks()`
+- `Dashboard.getHabitHistory(from, to)`
+- `Dashboard.getProgressSummary()`
+- `Dashboard.getGroupActivity(limit)`
+- `AnalyticsService` — consistency trend, habit-density heatmap, per-habit
+  breakdown, summary stats (current/highest streak, avg completion)
+- `ExportService` — CSV and PDF generation
+- React `Dashboard` and `Analytics` pages wired to the above over a REST API
 
-1. FrontEnd: Group creation viww; Join group via invite code view; Group settings & peer list management.
-2. BackEnd: Unique invite code generator and validation; Group membership constraints & access control.
-3. DB: Group & membership scheme; Group CRUD & Join endpoints.
+**Not yet integrated** (parts of the db is owned by other workstreams, 
+mocked up here so that this slice can be built/tested independently): 
+JWT auth (`userId` is a query param for now), the real Habit CRUD forms, 
+and group creation/joining.
 
+## Structure
 
-David Engles (DevOps & scrum Master: manage Git, page speed performance(<2secs), task boards in Jira and perform backlog refinement) - **Habit Management & Streak Engine**
+```
+backend/    Node.js + Express + PostgreSQL API (src/, tests/)
+frontend/   React + Vite UI (src/, tests/)
+docs/       Cyclomatic complexity report, GUI test log
+```
 
-1. FrontEnd: Add/edit/archive habit forms ; Quantitative target inputs(minutes/pages); snooze/rest day UI toggles
-2. BackEnd: CRUD business logic for habits; Active streak calculation algorithms; Habit state machine logic.
-3. DB: Habit and target scheme; habit status CRUD endpoints; streak logs.
+## For demo:
 
-Kiana Faia - **Visual Dashboard & Analytics**
+Node.js, PostgreSQL, and Git are already installed and on the laptop PATH
 
-1. FrontEnd: Responsive progress dashboard; habit history & completion charts; PDF/CSV export UI
-2. BackEnd: Data aggregation services for metrics; PDF/CSV document generation engine.
-3. DB: Analytics endpoints; Historical logging queries; User stats scheme aggregation.
+### 1. Backend setup
 
+```bash
+cd backend
+npm install
+```
 
-Monal Iyer - **Social Activity Feed & Notifications**
-1. FrontEnd: Shared group activity feed UI; Real-time log feed updates; Milestone notification toasts.
-2. BackEnd: Group completion feed aggregation; Automated email notification service for milestone accomplishments.
-3. DB: Feed activity scheme; Notification queue & event triggers.
+Edit `.env` and set the password:
+```
+DATABASE_URL="postgresql://postgres:postgres1one!@@localhost:5432/habittracker"
+```
 
+Back in the terminal:
+```bash
+createdb -U postgres habittracker
+npx prisma migrate dev --name init
+npx prisma db seed
+npm test
+npm start                  # http://localhost:4000 should be left running
+```
 
-Yingisani Mabaso - **Authentication Security and Admin**
+### 3. Frontend setup (new terminal window)
 
-1. FrontEnd: Login+Registration; User Profile Settings;Admin Moderation panel
-2. BackEnd: JWT authentication & session handling; Bcrypt password hashing; POPIA compliant deletion and security.
-3. DB: Admin moderation flags; Auth endpoints; User and roles scheme
+```bash
+cd /frontend      
+npm install
+npm test
+npm run dev                # http://localhost:5173 should be left running
+```
 
+Then open `http://localhost:5173` in a browser (can ctrl + click in terminal).
 
+## Running the tests
 
+```bash
+cd backend && npm test     # Jest — 45 tests, DB is mocked, no Postgres needed
+cd frontend && npm test    # Vitest — 8 tests, fetch is mocked
+```
 
+Both suites pass with no live database required, since the `Dashboard` and
+`AnalyticsService` classes take an injected Prisma-Client-shaped object
+(dependency injection), and the API layer is tested by mocking `fetch`.
+
+## Database
+
+Schema lives in [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma)
+(models + enums matching the UML design: `User`, `Habit`, `HabitLog`,
+`AccountabilityGroup`, `GroupMembership`, `Activity`). To generate:
+
+```bash
+cd backend
+npx prisma migrate dev --name init   # creates + applies a migration
+npx prisma studio                    # optional to browse the data in a GUI
+```

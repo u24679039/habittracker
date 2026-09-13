@@ -1,9 +1,8 @@
-// HabitForge database schema (Prisma)
-// Replaces backend/src/db/schema.sql. Owned tables for this workstream are
-// the ones the Dashboard/Analytics classes read from; User/Habit/Group
-// tables are modelled here too (marked below) so this slice has a real
-// schema to migrate and query against ahead of Sprint 3 integration -
-// swap in the shared schema from the other workstreams at that point.
+// HabitTracker database schema (Prisma)
+// Owned tables for this workstream are the ones the Dashboard/Analytics 
+// classes read from; User/Habit/Group tables are modelled here too 
+// (marked below) so this slice has a real schema to migrate and query 
+// against ahead of Sprint 3 integration.
 
 generator client {
   provider = "prisma-client-js"
@@ -50,8 +49,7 @@ enum ActivityType {
   GROUP_ANNOUNCEMENT
 }
 
-// [owned elsewhere - Yingisani's Auth workstream] included here as a stub
-// so Habit/GroupMembership/Activity have somewhere to point their FKs.
+// [owned elsewhere - Yingisani's Auth workstream] 
 model User {
   userId       Int      @id @default(autoincrement()) @map("user_id")
   name         String
@@ -140,7 +138,7 @@ model GroupMembership {
   @@map("group_memberships")
 }
 
-// [ANALYTICS] read (not owned) by Dashboard.getGroupActivity() - the write
+// [ANALYTICS] read by Dashboard.getGroupActivity() - the write
 // side (Activity.create()) belongs to Monal's Social Feed workstream.
 model Activity {
   activityId   Int          @id @default(autoincrement()) @map("activity_id")
