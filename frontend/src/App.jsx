@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Dashboard from './components/dashboard';
-//import Analytics from './components/Analytics';
+import Analytics from './components/Analytics';
 
 // Standalone demo shell for this workstream. Once auth is integrated
 // (Sprint 3), `userId` will come from the JWT session instead of this
@@ -17,9 +17,9 @@ export default function App() {
         <button style={tabStyle(tab === 'dashboard')} onClick={() => setTab('dashboard')}>
           Dashboard
         </button>
-        {/* <button style={tabStyle(tab === 'analytics')} onClick={() => setTab('analytics')}>
+        {<button style={tabStyle(tab === 'analytics')} onClick={() => setTab('analytics')}>
           Analytics
-        </button> */}
+        </button> }
       </nav>
       {tab === 'dashboard' ? <Dashboard userId={DEMO_USER_ID} /> : <Analytics userId={DEMO_USER_ID} />}
     </div>
