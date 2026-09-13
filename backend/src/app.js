@@ -1,12 +1,14 @@
 const express = require('express');
+const cors = require('cors');
 const dashboardRoutes = require('./routes/dashboardRoutes');
-const analyticsRoutes = require('./routes/analyticsRoutes');
+// const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express(); // initialize Express app instance
+app.use(cors()); // frontend (5173) and backend (4000) are different origins - without this, every fetch() from the browser fails with a generic "Failed to fetch" error, indistinguishable from the server being down
 app.use(express.json()); // intercepts incoming HTTP requests and parses JSON payloads into req.body
 
 app.use('/api/dashboard', dashboardRoutes); // requests starting with /api/dashboard are routed to dashboardRoutes
-app.use('/api/analytics', analyticsRoutes); // requests starting with /api/analytics are routed to analyticsRoutes
+// app.use('/api/analytics', analyticsRoutes); // requests starting with /api/analytics are routed to analyticsRoutes
 
 app.get('/health', (req, res) => res.json({ status: 'ok' })); // automated platforms can ping to check website 'health'
 

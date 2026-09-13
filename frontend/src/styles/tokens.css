@@ -1,0 +1,133 @@
+/*
+  Design tokens for the Dashboard & Analytics pages.
+  Kept intentionally close to the wireframes already agreed with the team
+  (Figs. 19 & 24 of the design doc): a plain, high-contrast, data-first
+  look rather than a decorative one - this is a utility tool students
+  check every day, not a marketing page.
+*/
+
+:root {
+  --hf-bg: #ffffff;
+  --hf-surface: #fafafa;
+  --hf-border: #e4e4e4;
+  --hf-text: #16181d;
+  --hf-text-muted: #6b7280;
+  --hf-accent: #16a34a;       /* streak green, matches the heatmap in Fig. 24 */
+  --hf-accent-soft: #dcfce7;
+  --hf-danger: #dc2626;
+
+  --hf-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --hf-radius: 10px;
+  --hf-space-1: 4px;
+  --hf-space-2: 8px;
+  --hf-space-3: 16px;
+  --hf-space-4: 24px;
+  --hf-space-5: 32px;
+}
+
+.hf-page {
+  font-family: var(--hf-font);
+  color: var(--hf-text);
+  background: var(--hf-bg);
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--hf-space-4);
+}
+
+.hf-page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--hf-space-4);
+}
+
+.hf-page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.hf-card {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-border);
+  border-radius: var(--hf-radius);
+  padding: var(--hf-space-3);
+}
+
+.hf-grid {
+  display: grid;
+  gap: var(--hf-space-3);
+}
+
+.hf-grid--stats {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.hf-stat-label {
+  font-size: 0.8rem;
+  color: var(--hf-text-muted);
+  margin: 0 0 var(--hf-space-1);
+}
+
+.hf-stat-value {
+  font-size: 1.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.hf-habit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--hf-space-2) 0;
+  border-bottom: 1px solid var(--hf-border);
+}
+
+.hf-habit-row:last-child {
+  border-bottom: none;
+}
+
+.hf-progress-track {
+  flex: 1;
+  height: 6px;
+  background: var(--hf-border);
+  border-radius: 4px;
+  margin: 0 var(--hf-space-3);
+  overflow: hidden;
+}
+
+.hf-progress-fill {
+  height: 100%;
+  background: var(--hf-text);
+}
+
+.hf-button {
+  border: 1px solid var(--hf-text);
+  background: var(--hf-text);
+  color: white;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.hf-button--ghost {
+  background: transparent;
+  color: var(--hf-text);
+}
+
+.hf-empty-state {
+  color: var(--hf-text-muted);
+  font-size: 0.9rem;
+  padding: var(--hf-space-4) 0;
+  text-align: center;
+}
+
+.hf-error-banner {
+  background: #fee2e2;
+  color: var(--hf-danger);
+  border-radius: var(--hf-radius);
+  padding: var(--hf-space-2) var(--hf-space-3);
+  margin-bottom: var(--hf-space-3);
+  font-size: 0.9rem;
+}
