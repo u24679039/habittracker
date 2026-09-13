@@ -1,5 +1,5 @@
 const express = require('express');
-const dashboard = require('../modules/dashboard');
+const dashboard = require('../models/dashboard');
 const prisma = require('../db/prismaClient');
 
 const router = express.Router();
