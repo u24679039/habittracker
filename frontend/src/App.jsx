@@ -5,7 +5,7 @@ import Analytics from './components/Analytics';
 // Standalone demo shell for this workstream. Once auth is integrated
 // (Sprint 3), `userId` will come from the JWT session instead of this
 // hardcoded stand-in.
-const DEMO_USER_ID = 6;
+const DEMO_USER_ID = 7;
 
 export default function App() {
   const [tab, setTab] = useState('dashboard');
