@@ -26,7 +26,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const DEMO_EMAILS = ['demo@habittracker.test', 'alex@habittracker.test', 'jordan@habittracker.test'];
+const DEMO_EMAILS = ['demo@habitforge.test', 'alex@habitforge.test', 'jordan@habitforge.test'];
 const DEMO_INVITE_CODE = 'DEMO-1234';
 
 /** Deterministic PRNG (mulberry32) so demo data is reproducible across re-seeds. */
@@ -96,9 +96,46 @@ async function createHabitWithHistory(userId, def) {
   return habit;
 }
 
+/**
+ * Resets a table's auto-increment sequence to match what's actually left
+ * in it, rather than blindly forcing it to 1. After this seed script's
+ * cleanup step, these tables are empty, so this naturally makes the next
+ * inserted row get id=1 again - keeping "Demo Student" at userId=1 on
+ * every re-seed, so the frontend's hardcoded DEMO_USER_ID never drifts.
+ * If the table isn't empty (e.g. you've added other rows by hand via
+ * Prisma Studio), this safely continues after the current max id instead
+ * of colliding with them - unlike a hardcoded `RESTART WITH 1` would.
+ */
+async function resyncSequence(table, column) {
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('"${table}"', '${column}'),
+      COALESCE((SELECT MAX("${column}") FROM "${table}"), 0) + 1,
+      false
+    )
+  `);
+}
+
 async function main() {
+  // Clean up everything from a previous seed run - both the users AND the
+  // group they created. Deleting only the users left the old group behind
+  // (deleting a user doesn't cascade "upward" to things they own), which
+  // then collided with the new group's invite code on the unique
+  // constraint. GroupMembership/Activity rows cascade-delete automatically
+  // when their group is deleted (see schema.prisma), so this one line
+  // cleans up the whole old group tree.
   await prisma.accountabilityGroup.deleteMany({ where: { inviteCode: DEMO_INVITE_CODE } });
   await prisma.user.deleteMany({ where: { email: { in: DEMO_EMAILS } } });
+
+  // Re-sync every id sequence this seed touches, so IDs are deterministic
+  // across re-seeds instead of drifting upward forever (Postgres SERIAL
+  // never reuses ids just because rows were deleted).
+  await resyncSequence('users', 'user_id');
+  await resyncSequence('habits', 'habit_id');
+  await resyncSequence('habit_logs', 'log_id');
+  await resyncSequence('accountability_groups', 'group_id');
+  await resyncSequence('group_memberships', 'membership_id');
+  await resyncSequence('activities', 'activity_id');
 
   const demo = await prisma.user.create({
     data: { name: 'Demo Student', email: DEMO_EMAILS[0], passwordHash: 'seed-only', role: 'USER' },
