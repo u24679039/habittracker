@@ -1,6 +1,7 @@
 // authService.js
 // Part of: Authentication, Security & Admin (Yingisani Mabaso)
 // Handles user registration, login, profile updates and account deletion.
+require("dotenv").config();
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -11,7 +12,11 @@ const users = [];
 
 // Temporary JWT secret.
 // Later this should be stored in an environment variable.
-const JWT_SECRET = "habittracker_secret";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined in the environment.");
+}
 
 
 /**
