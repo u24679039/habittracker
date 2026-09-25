@@ -175,11 +175,46 @@ function deleteAccount(userId) {
   };
 }
 
+async function createAdmin(name, email, password) {
+  if (!name || !email || !password) {
+    return {
+      success: false,
+      message: "Name, email and password are required."
+    };
+  }
 
+  const existingUser = users.find((user) => user.email === email);
+
+  if (existingUser) {
+    return {
+      success: false,
+      message: "Email is already registered."
+    };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const admin = {
+    id: users.length + 1,
+    name,
+    email,
+    passwordHash,
+    role: "ADMIN"
+  };
+
+  users.push(admin);
+
+  return {
+    success: true,
+    message: "Admin created successfully.",
+    userId: admin.id
+  };
+}
 module.exports = {
   register,
   login,
   updateProfile,
   deleteAccount,
+  createAdmin,
   users
 };

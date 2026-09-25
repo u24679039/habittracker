@@ -1,5 +1,8 @@
 const express = require("express");
-const { authenticateToken } = require("./authMiddleware");
+const {
+  authenticateToken,
+  requireAdmin
+} = require("./authMiddleware");
 
 const {
   register,
@@ -98,36 +101,50 @@ app.put("/api/admin/groups/:groupId/flag", (req, res) => {
 });
 
 // Get all flagged groups
-app.get("/api/admin/flagged-groups", (req, res) => {
-  res.json(getFlaggedGroups());
-});
+app.get(
+  "/api/admin/flagged-groups",
+  authenticateToken,
+  requireAdmin,
+  (req, res) => {
+    res.json(getFlaggedGroups());
+  }
+);
 
 // Review a flagged group
-app.put("/api/admin/groups/:groupId/review", (req, res) => {
-  const groupId = Number(req.params.groupId);
+app.put(
+  "/api/admin/groups/:groupId/review",
+  authenticateToken,
+  requireAdmin,
+  (req, res) => {
+    const groupId = Number(req.params.groupId);
 
-  const result = reviewFlaggedGroup(groupId);
+    const result = reviewFlaggedGroup(groupId);
 
-  if (!result.success) {
-    return res.status(400).json(result);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
   }
-
-  res.json(result);
-});
+);
 
 // Remove a group
-app.delete("/api/admin/groups/:groupId", (req, res) => {
-  const groupId = Number(req.params.groupId);
+app.delete(
+  "/api/admin/groups/:groupId",
+  authenticateToken,
+  requireAdmin,
+  (req, res) => {
+    const groupId = Number(req.params.groupId);
 
-  const result = removeGroup(groupId);
+    const result = removeGroup(groupId);
 
-  if (!result.success) {
-    return res.status(404).json(result);
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    res.json(result);
   }
-
-  res.json(result);
-});
-
+);
 // ====================
 // Server
 // ====================
