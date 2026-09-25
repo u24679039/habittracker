@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+//Auth
+enum UserRole {
+  USER
+  ADMIN
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  CreatedAt DateTime @default(now())
+
+  habits Habit[]
+  logs   HabitLog[]
+}
+//habits
+model Habit{
+  habitId Int @id @default(autoincrement())
+  userId Int
+  title String
+  description String?
+  targetValue Int
+  targetUnit String
+  frequency String @default("daily")
+  StatusOfHabit String
+  Activated Boolean @default(true)
+  user User @relation(fields: [userId],references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  archivedAt DateTime?
+
+  logs HabitLog[] 
+}
+
+
+
+//analytics and logs 
+model HabitLog{
+  logId Int @id @default(autoincrement())
+  habitId Int
+  habit Habit @relation(fields: [habitId], references: [habitId], onDelete: Cascade)
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  //date DateTime
+  value Float?
+  status String
+  note String
+
+}
+
+
+
