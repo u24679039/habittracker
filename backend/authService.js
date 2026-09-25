@@ -1,17 +1,13 @@
 // authService.js
 // Part of: Authentication, Security & Admin (Yingisani Mabaso)
 // Handles user registration, login, profile updates and account deletion.
+
 require("dotenv").config();
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { prisma } = require("../Server_Back/prisma/client");
 
-// Temporary user storage.
-// This will later be replaced by PostgreSQL/Prisma.
-const users = [];
-
-// Temporary JWT secret.
-// Later this should be stored in an environment variable.
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
@@ -20,7 +16,7 @@ if (!JWT_SECRET) {
 
 
 /**
- * Registers a new user.
+ * Registers a new user using Prisma.
  */
 async function register(name, email, password) {
   if (!name || !email || !password) {
@@ -30,9 +26,11 @@ async function register(name, email, password) {
     };
   }
 
-  const existingUser = users.find(
-    (user) => user.email === email
-  );
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email: email
+    }
+  });
 
   if (existingUser) {
     return {
@@ -43,15 +41,14 @@ async function register(name, email, password) {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const user = {
-    id: users.length + 1,
-    name: name,
-    email: email,
-    passwordHash: passwordHash,
-    role: "USER"
-  };
-
-  users.push(user);
+  const user = await prisma.user.create({
+    data: {
+      name: name,
+      email: email,
+      password: passwordHash,
+      role: "USER"
+    }
+  });
 
   return {
     success: true,
@@ -62,7 +59,7 @@ async function register(name, email, password) {
 
 
 /**
- * Logs a user into the system.
+ * Logs a user into the system using Prisma.
  */
 async function login(email, password) {
   if (!email || !password) {
@@ -72,9 +69,11 @@ async function login(email, password) {
     };
   }
 
-  const user = users.find(
-    (user) => user.email === email
-  );
+  const user = await prisma.user.findUnique({
+    where: {
+      email: email
+    }
+  });
 
   if (!user) {
     return {
@@ -85,7 +84,7 @@ async function login(email, password) {
 
   const passwordCorrect = await bcrypt.compare(
     password,
-    user.passwordHash
+    user.password
   );
 
   if (!passwordCorrect) {
@@ -115,12 +114,14 @@ async function login(email, password) {
 
 
 /**
- * Updates a user's profile.
+ * Updates a user's profile using Prisma.
  */
-function updateProfile(userId, updates) {
-  const user = users.find(
-    (user) => user.id === userId
-  );
+async function updateProfile(userId, updates) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId
+    }
+  });
 
   if (!user) {
     return {
@@ -129,16 +130,12 @@ function updateProfile(userId, updates) {
     };
   }
 
-  if (updates.name) {
-    user.name = updates.name;
-  }
-
-  if (updates.email) {
-    const emailTaken = users.find(
-      (existingUser) =>
-        existingUser.email === updates.email &&
-        existingUser.id !== userId
-    );
+  if (updates.email && updates.email !== user.email) {
+    const emailTaken = await prisma.user.findUnique({
+      where: {
+        email: updates.email
+      }
+    });
 
     if (emailTaken) {
       return {
@@ -146,9 +143,24 @@ function updateProfile(userId, updates) {
         message: "Email is already in use."
       };
     }
-
-    user.email = updates.email;
   }
+
+  const dataToUpdate = {};
+
+  if (updates.name) {
+    dataToUpdate.name = updates.name;
+  }
+
+  if (updates.email) {
+    dataToUpdate.email = updates.email;
+  }
+
+  await prisma.user.update({
+    where: {
+      id: userId
+    },
+    data: dataToUpdate
+  });
 
   return {
     success: true,
@@ -158,21 +170,27 @@ function updateProfile(userId, updates) {
 
 
 /**
- * Deletes a user's account.
+ * Deletes a user's account using Prisma.
  */
-function deleteAccount(userId) {
-  const userIndex = users.findIndex(
-    (user) => user.id === userId
-  );
+async function deleteAccount(userId) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId
+    }
+  });
 
-  if (userIndex === -1) {
+  if (!user) {
     return {
       success: false,
       message: "User not found."
     };
   }
 
-  users.splice(userIndex, 1);
+  await prisma.user.delete({
+    where: {
+      id: userId
+    }
+  });
 
   return {
     success: true,
@@ -180,6 +198,13 @@ function deleteAccount(userId) {
   };
 }
 
+
+/**
+ * Creates an administrator using Prisma.
+ *
+ * This is intended for controlled setup/testing only.
+ * It is NOT exposed as a public registration endpoint.
+ */
 async function createAdmin(name, email, password) {
   if (!name || !email || !password) {
     return {
@@ -188,7 +213,11 @@ async function createAdmin(name, email, password) {
     };
   }
 
-  const existingUser = users.find((user) => user.email === email);
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email: email
+    }
+  });
 
   if (existingUser) {
     return {
@@ -199,15 +228,14 @@ async function createAdmin(name, email, password) {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const admin = {
-    id: users.length + 1,
-    name,
-    email,
-    passwordHash,
-    role: "ADMIN"
-  };
-
-  users.push(admin);
+  const admin = await prisma.user.create({
+    data: {
+      name: name,
+      email: email,
+      password: passwordHash,
+      role: "ADMIN"
+    }
+  });
 
   return {
     success: true,
@@ -215,11 +243,12 @@ async function createAdmin(name, email, password) {
     userId: admin.id
   };
 }
+
+
 module.exports = {
   register,
   login,
   updateProfile,
   deleteAccount,
-  createAdmin,
-  users
+  createAdmin
 };
