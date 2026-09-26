@@ -1,5 +1,3 @@
-// streakQueryService.js
-//
 // EH-30: Date queries for current streaks and trends
 // This file pulls together the current streak for every
 // member of a given accountability group, so the activity feed (EH-34)
