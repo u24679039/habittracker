@@ -36,8 +36,8 @@ test("a non-milestone streak returns false and never attempts to send anything",
 test("a milestone streak returns true immediately, WITHOUT waiting for the email to finish", () => {
   let emailActuallyFinished = false;
 
-  // This fake "send" function pretends to be a slow network call,
-  // taking 100ms before it resolves - simulating a real, slightly slow email server.
+  // This fake send function pretends to be a slow network call,
+  // taking 100ms before it resolves - simulating a real, slow email server
   const slowFakeSend = () =>
     new Promise((resolve) => {
       setTimeout(() => {
