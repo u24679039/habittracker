@@ -9,7 +9,6 @@ import '../styles/tokens.css';
  * user belongs to. All data comes from the `Dashboard` backend class via
  * dashboardApi.
  */
-
 export default function Dashboard({ userId }) {
   const [progress, setProgress] = useState(null);
   const [streaks, setStreaks] = useState(null);
@@ -17,14 +16,20 @@ export default function Dashboard({ userId }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // `cancelled` guards against a classic React race: if `userId` changes
+    // (or the component unmounts) before these three requests resolve, we
+    // must not call setState on stale data - this flag is checked before
+    // every setState below, and flipped true in the cleanup function.
     let cancelled = false;
 
     async function load() {
       try {
+        // All three widgets are independent - fetch concurrently rather
+        // than waterfalling one after another.
         const [progressSummary, currentStreaks, groupActivity] = await Promise.all([
           dashboardApi.getProgressSummary(userId),
           dashboardApi.getStreaks(userId),
-          dashboardApi.getGroupActivity(userId, 5),
+          dashboardApi.getGroupActivity(userId, 5), // top 5 is enough for this compact preview; the full feed lives on the Groups page (owned by another workstream)
         ]);
         if (cancelled) return;
         setProgress(progressSummary);
@@ -41,6 +46,9 @@ export default function Dashboard({ userId }) {
     };
   }, [userId]);
 
+  // getCurrentStreaks() returns { habitId: streakLength } for every habit;
+  // the "Current streak" card shows whichever habit is doing best, not a
+  // per-habit breakdown (that's what the Analytics page is for).
   const streakValues = streaks ? Object.values(streaks) : [];
   const bestCurrentStreak = streakValues.length ? Math.max(...streakValues) : 0;
 
@@ -52,9 +60,10 @@ export default function Dashboard({ userId }) {
 
       {error && <div className="hf-error-banner">Couldn't load your dashboard: {error}</div>}
 
-      <div className="hf-grid" style={{ gridTemplateColumns: '2fr 1fr' }}>
+      <div className="hf-grid hf-dashboard-grid">
         <section className="hf-card">
           <h3 style={{ marginTop: 0 }}>Today's targets</h3>
+          {/* Three mutually-exclusive states while `progress` loads: null = loading, empty object = no habits yet, populated = render the list */}
           {progress === null && !error && <p className="hf-empty-state">Loading habits...</p>}
           {progress && Object.keys(progress).length === 0 && (
             <p className="hf-empty-state">No active habits yet. Add one to get started.</p>

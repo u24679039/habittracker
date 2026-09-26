@@ -138,8 +138,8 @@ model GroupMembership {
   @@map("group_memberships")
 }
 
-// [ANALYTICS] read by Dashboard.getGroupActivity() - the write
-// side (Activity.create()) belongs to Monal's Social Feed workstream.
+// [ANALYTICS] read by Dashboard.getGroupActivity()
+// write side (Activity.create()) belongs to Monal's Social Feed workstream.
 model Activity {
   activityId   Int          @id @default(autoincrement()) @map("activity_id")
   groupId      Int          @map("group_id")

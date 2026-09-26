@@ -6,7 +6,7 @@ import Analytics from './components/Analytics';
 // (Sprint 3), `userId` will come from the JWT session instead of this
 // hardcoded stand-in. Update this to whatever userId your seed script
 // actually printed if it's ever not 1 (see prisma/seed.js).
-const DEMO_USER_ID = 7;
+const DEMO_USER_ID = 1;
 
 /**
  * App
@@ -38,6 +38,7 @@ export default function App() {
 const navStyle = {
   display: 'flex',
   alignItems: 'center',
+  flexWrap: 'wrap',
   padding: '12px 24px',
   borderBottom: '1px solid #e4e4e4',
   fontFamily: 'Inter, sans-serif',

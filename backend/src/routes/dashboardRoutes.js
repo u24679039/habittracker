@@ -4,10 +4,18 @@ const prisma = require('../db/prismaClient');
 
 const router = express.Router();
 
-// NOTE: auth middleware (JWT decode -> req.userId) is owned by
-// Yingisani's Authentication workstream and will be wired in at
-// integration. For this sprint userId is read from a query param so the
-// dashboard/analytics endpoints can be demoed and tested independently.
+/**
+ * Resolves and validates the user ID from the request query parameters or custom headers.
+ * 
+ * NOTE: auth middleware (JWT decode -> req.userId) is owned by
+ * Yingisani's Authentication workstream and will be wired in at
+ * integration. For this sprint userId is read from a query param so the
+ * dashboard/analytics endpoints can be demoed and tested independently.
+ * 
+ * @param {import('express').Request} req - Express request object
+ * @returns {number} The validated positive integer user ID
+ * @throws {Error} Throws a 400 error if the user ID is missing or invalid
+ */
 function resolveUserId(req) {
   const userId = Number(req.query.userId || req.headers['x-user-id']);
   if (!Number.isInteger(userId) || userId <= 0) {
@@ -18,6 +26,10 @@ function resolveUserId(req) {
   return userId;
 }
 
+/**
+ * GET /streaks
+ * Retrieves the current habit streaks for the user.
+ */
 router.get('/streaks', async (req, res, next) => {
   try {
     const dash = new dashboard(resolveUserId(req), prisma);
@@ -27,6 +39,14 @@ router.get('/streaks', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /history
+ * Retrieves habit history records within a specified date window.
+ * 
+ * Query Parameters:
+ * - from: Start date string (YYYY-MM-DD)
+ * - to: End date string (YYYY-MM-DD)
+ */
 router.get('/history', async (req, res, next) => {
   try {
     const { from, to } = req.query;
@@ -37,6 +57,10 @@ router.get('/history', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /progress-summary
+ * Retrieves an aggregated progress summary report for the user.
+ */
 router.get('/progress-summary', async (req, res, next) => {
   try {
     const dash = new dashboard(resolveUserId(req), prisma);
@@ -46,6 +70,13 @@ router.get('/progress-summary', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /group-activity
+ * Retrieves recent activity feed entries for groups the user belongs to.
+ * 
+ * Query Parameters:
+ * - limit: Maximum number of records to return (defaults to 20)
+ */
 router.get('/group-activity', async (req, res, next) => {
   try {
     const limit = req.query.limit ? Number(req.query.limit) : 20;
@@ -56,4 +87,4 @@ router.get('/group-activity', async (req, res, next) => {
   }
 });
 
-module.exports = router;
+module.exports = router;     

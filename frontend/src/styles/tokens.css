@@ -5,7 +5,6 @@
   look rather than a decorative one - this is a utility tool students
   check every day, not a marketing page.
 */
-
 :root {
   --hf-bg: #ffffff;
   --hf-surface: #fafafa;
@@ -61,6 +60,38 @@
 
 .hf-grid--stats {
   grid-template-columns: repeat(3, 1fr);
+}
+
+/* Named layout classes (instead of inline gridTemplateColumns) so the
+   media query below can actually override them - inline styles always
+   win over CSS, so a responsive breakpoint is impossible unless the
+   column layout is expressed here instead of in the component. */
+.hf-dashboard-grid {
+  grid-template-columns: 2fr 1fr;
+}
+
+.hf-analytics-two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Mobile layout: stack every multi-column grid into a single column, and
+   let the page header wrap instead of overflowing on narrow screens. */
+@media (max-width: 640px) {
+  .hf-grid--stats,
+  .hf-dashboard-grid,
+  .hf-analytics-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .hf-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hf-space-2);
+  }
+
+  .hf-page {
+    padding: var(--hf-space-3);
+  }
 }
 
 .hf-stat-label {

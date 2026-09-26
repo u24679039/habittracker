@@ -12,6 +12,10 @@ import '../styles/tokens.css';
  * for the low-priority "export monthly analytics" user story.
  */
 export default function Analytics({ userId }) {
+  // The trend chart shows a fixed trailing 7-day window; the heatmap
+  // shows the current calendar month. Computed once per render rather
+  // than memoized, since they only depend on "now" (effectively constant
+  // for the component's lifetime) and recomputing them is negligible cost.
   const month = new Date().toISOString().slice(0, 7);
   const weekAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const today = new Date().toISOString().slice(0, 10);
@@ -23,10 +27,14 @@ export default function Analytics({ userId }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // See Dashboard.jsx for why this cancellation-flag pattern is needed
+    // (avoids setState-after-unmount / stale-userId races).
     let cancelled = false;
 
     async function load() {
       try {
+        // All four widgets are independent - fetch concurrently rather
+        // than waterfalling one after another.
         const [summaryData, trendData, heatmapData, breakdownData] = await Promise.all([
           analyticsApi.getSummary(userId),
           analyticsApi.getTrend(userId, weekAgo, today),
@@ -47,6 +55,9 @@ export default function Analytics({ userId }) {
     return () => {
       cancelled = true;
     };
+    // month/weekAgo/today are intentionally excluded from the dependency
+    // array: they're derived from "now" once per mount and shouldn't
+    // re-trigger a fetch on every render - only a genuine userId change should.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
@@ -89,7 +100,7 @@ export default function Analytics({ userId }) {
         )}
       </section>
 
-      <div className="hf-grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 'var(--hf-space-4)' }}>
+      <div className="hf-grid hf-analytics-two-col" style={{ marginTop: 'var(--hf-space-4)' }}>
         <section className="hf-card">
           <h3 style={{ marginTop: 0 }}>Habit density heatmap</h3>
           {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
