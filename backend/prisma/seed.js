@@ -24,7 +24,12 @@
  * Safe to re-run: deletes and recreates all three demo users first.
  */
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter }); 
 
 const DEMO_EMAILS = ['demo@habitforge.test', 'alex@habitforge.test', 'jordan@habitforge.test'];
 const DEMO_INVITE_CODE = 'DEMO-1234';
@@ -79,9 +84,9 @@ async function createHabitWithHistory(userId, def) {
 
   const statuses = buildHistory(def);
   for (let i = 0; i < statuses.length; i += 1) {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - i);
+    // Create date anchored to UTC midnight to avoid local timezone drift
+    const now = new Date();
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
     const status = statuses[i];
 
     await prisma.habitLog.create({
