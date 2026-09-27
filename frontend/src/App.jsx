@@ -3,9 +3,6 @@ import Dashboard from './components/dashboard';
 import Analytics from './components/Analytics';
 import './styles/tokens.css';
 
-// Standalone demo shell for this workstream. Once auth is integrated
-// (Sprint 3), `userId` will come from the JWT session instead of this
-// hardcoded stand-in.
 const DEMO_USER_ID = 5;
 
 // --- STUB COMPONENTS FOR DEMO MOCKUPS ---
@@ -70,11 +67,6 @@ const AccountModal = ({ onClose, currentRole }) => (
   </div>
 );
 
-/**
- * App
- * Top-level shell for the demo: 4-tab nav (Dashboard / Habits / Groups / Analytics)
- * with notification dropdown, role switcher, and account modal stubs.
- */
 export default function App() {
   const [tab, setTab] = useState('dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -119,9 +111,23 @@ export default function App() {
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }}
               title="Notifications">
-              🔔
+              {/* Clean SVG Bell Icon replacing the emoji */}
+              <svg 
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                style={{ color: '#555' }}
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
             </button>
 
             {showNotifications && (
@@ -166,7 +172,7 @@ export default function App() {
       </nav>
 
       {/* Dynamic Tab Rendering */}
-      {tab === 'dashboard' && <Dashboard userId={DEMO_USER_ID} />}
+      {tab === 'dashboard' && <Dashboard userId={DEMO_USER_ID} onNavigate={setTab} />}
       {tab === 'habits' && <HabitsStub />}
       {tab === 'groups' && <GroupsStub />}
       {tab === 'analytics' && <Analytics userId={DEMO_USER_ID} />}

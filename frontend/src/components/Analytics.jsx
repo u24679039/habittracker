@@ -6,16 +6,14 @@ import '../styles/tokens.css';
 
 /**
  * Analytics
+ * 
  * The Analytics page (Fig. 24): three summary stat cards, a weekly
  * "Execution Consistency" line chart, a monthly habit-density heatmap,
  * and a per-habit completion breakdown - plus CSV/PDF export buttons
- * for the low-priority "export monthly analytics" user story.
+ * matching the dashboard's design token styling and hover interactive states.
  */
 export default function Analytics({ userId }) {
-  // The trend chart shows a fixed trailing 7-day window; the heatmap
-  // shows the current calendar month. Computed once per render rather
-  // than memoized, since they only depend on "now" (effectively constant
-  // for the component's lifetime) and recomputing them is negligible cost.
+  // Compute active month and trailing 7-day window once per mount
   const month = new Date().toISOString().slice(0, 7);
   const weekAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const today = new Date().toISOString().slice(0, 10);
@@ -27,14 +25,12 @@ export default function Analytics({ userId }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // See Dashboard.jsx for why this cancellation-flag pattern is needed
-    // (avoids setState-after-unmount / stale-userId races).
+    // Guards against React race conditions on unmount or userId changes
     let cancelled = false;
 
     async function load() {
       try {
-        // All four widgets are independent - fetch concurrently rather
-        // than waterfalling one after another.
+        // Fetch all analytics widget streams concurrently
         const [summaryData, trendData, heatmapData, breakdownData] = await Promise.all([
           analyticsApi.getSummary(userId),
           analyticsApi.getTrend(userId, weekAgo, today),
@@ -55,21 +51,37 @@ export default function Analytics({ userId }) {
     return () => {
       cancelled = true;
     };
-    // month/weekAgo/today are intentionally excluded from the dependency
-    // array: they're derived from "now" once per mount and shouldn't
-    // re-trigger a fetch on every render - only a genuine userId change should.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   return (
     <div className="hf-page">
-      <div className="hf-page-header">
+      {/* Inline styles for export button hover utility */}
+      <style>{`
+        .hf-export-btn {
+          padding: 4px 10px;
+          font-size: 0.8rem;
+          background: #fff;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          cursor: pointer;
+          text-decoration: none;
+          color: #333;
+          transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .hf-export-btn:hover {
+          background: #f0f0f0;
+          border-color: #999;
+        }
+      `}</style>
+
+      {/* Page Header with Export Buttons */}
+      <div className="hf-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Analytics</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <a className="hf-button hf-button--ghost" href={analyticsApi.exportCsvUrl(userId)}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <a href={analyticsApi.exportCsvUrl(userId)} className="hf-export-btn">
             Export CSV
           </a>
-          <a className="hf-button" href={analyticsApi.exportPdfUrl(userId, month)}>
+          <a href={analyticsApi.exportPdfUrl(userId, month)} className="hf-export-btn">
             Export PDF
           </a>
         </div>
@@ -77,65 +89,81 @@ export default function Analytics({ userId }) {
 
       {error && <div className="hf-error-banner">Couldn't load analytics: {error}</div>}
 
-      <div className="hf-grid hf-grid--stats">
+      {/* Top Stat Cards Grid */}
+      <div className="hf-grid hf-grid--stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <StatCard label="Current streak" value={summary && `${summary.currentStreak} days`} />
         <StatCard label="Highest streak" value={summary && `${summary.highestStreak} days`} />
         <StatCard label="Avg completion" value={summary && `${summary.avgCompletion}%`} />
       </div>
 
+      {/* Execution Consistency Chart Section */}
       <section className="hf-card" style={{ marginTop: 'var(--hf-space-4)' }}>
-        <h3 style={{ marginTop: 0 }}>Execution consistency (last 7 days)</h3>
+        <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Execution consistency (last 7 days)</h3>
         {trend === null && !error && <p className="hf-empty-state">Loading trend...</p>}
         {trend && trend.length === 0 && <p className="hf-empty-state">No logs yet this week.</p>}
         {trend && trend.length > 0 && (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trend}>
-              <CartesianGrid stroke="#e6ddd1" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#7a7169' }} tickFormatter={(d) => d.slice(5)} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#7a7169' }} width={32} />
+              <CartesianGrid stroke="#eee" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#666' }} tickFormatter={(d) => d.slice(5)} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#666' }} width={32} />
               <Tooltip formatter={(v) => `${v}%`} />
-              <Line type="monotone" dataKey="completionRate" stroke="#292420" strokeWidth={2} dot={{ fill: '#292420', r: 3 }} />
+              <Line type="monotone" dataKey="completionRate" stroke="#333" strokeWidth={2} dot={{ fill: '#333', r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         )}
       </section>
 
-      <div className="hf-grid hf-analytics-two-col" style={{ marginTop: 'var(--hf-space-4)' }}>
+      {/* Two-Column Analytics Layout matching Dashboard Hero Card styling */}
+      <div className="hf-grid hf-analytics-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: 'var(--hf-space-4)' }}>
+        
+        {/* Monthly Streak Heatmap Card */}
         <section className="hf-hero-card">
-          <h3 style={{ marginTop: 0 }}>Habit density heatmap</h3>
+          <h3 style={{ marginTop: 0, fontSize: '1.1rem', marginBottom: '1rem' }}>Habit density heatmap</h3>
           {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
-          {heatmap && <StreakHeatmap month={month} data={heatmap} />}
+          {heatmap && (
+            <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+              <StreakHeatmap month={month} data={heatmap} />
+            </div>
+          )}
         </section>
 
+        {/* Per-Habit Breakdown Card */}
         <section className="hf-hero-card">
-          <h3 style={{ marginTop: 0 }}>Per-habit breakdown</h3>
+          <h3 style={{ marginTop: 0, fontSize: '1.1rem', marginBottom: '1rem' }}>Per-habit breakdown</h3>
           {breakdown === null && !error && <p className="hf-empty-state">Loading breakdown...</p>}
           {breakdown && breakdown.length === 0 && (
             <p className="hf-empty-state">No active habits to break down yet.</p>
           )}
-          {breakdown &&
-            breakdown.map((habit) => (
-              <div className="hf-habit-row" key={habit.habitName}>
-                <span>{habit.habitName}</span>
-                <div className="hf-progress-track">
-                  <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+          {breakdown && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
+              {breakdown.map((habit) => (
+                <div key={habit.habitName} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 500, minWidth: '120px' }}>{habit.habitName}</span>
+                  <div className="hf-progress-track" style={{ flex: 1, margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%`, background: '#333', height: '100%' }} />
+                  </div>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)', minWidth: '35px', textAlign: 'right' }}>
+                    {habit.completionRate}%
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)' }}>
-                  {habit.completionRate}%
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>
   );
 }
 
+/**
+ * Reusable Stat Card Component matching dashboard card layout style
+ */
 function StatCard({ label, value }) {
   return (
-    <div className="hf-hero-card">
-      <p className="hf-stat-label">{label}</p>
-      <p className="hf-stat-value">{value ?? '—'}</p>
+    <div className="hf-card" style={{ padding: '1rem', textAlign: 'center' }}>
+      <p className="hf-stat-label" style={{ fontSize: '0.8rem', color: '#666', margin: '0 0 4px 0' }}>{label}</p>
+      <p className="hf-stat-value" style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: 0 }}>{value ?? '—'}</p>
     </div>
   );
 }
