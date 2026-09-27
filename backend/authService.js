@@ -1,7 +1,3 @@
-// authService.js
-// Part of: Authentication, Security & Admin (Yingisani Mabaso)
-// Handles user registration, login, profile updates and account deletion.
-
 require("dotenv").config();
 
 const bcrypt = require("bcrypt");
@@ -14,10 +10,10 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in the environment.");
 }
 
+// ====================
+// REGISTER
+// ====================
 
-/**
- * Registers a new user using Prisma.
- */
 async function register(name, email, password) {
   if (!name || !email || !password) {
     return {
@@ -57,10 +53,10 @@ async function register(name, email, password) {
   };
 }
 
+// ====================
+// LOGIN
+// ====================
 
-/**
- * Logs a user into the system using Prisma.
- */
 async function login(email, password) {
   if (!email || !password) {
     return {
@@ -112,10 +108,41 @@ async function login(email, password) {
   };
 }
 
+// ====================
+// GET PROFILE
+// ====================
 
-/**
- * Updates a user's profile using Prisma.
- */
+async function getProfile(userId) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      CreatedAt: true
+    }
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      message: "User not found."
+    };
+  }
+
+  return {
+    success: true,
+    user: user
+  };
+}
+
+// ====================
+// UPDATE PROFILE
+// ====================
+
 async function updateProfile(userId, updates) {
   const user = await prisma.user.findUnique({
     where: {
@@ -128,6 +155,12 @@ async function updateProfile(userId, updates) {
       success: false,
       message: "User not found."
     };
+  }
+
+  const dataToUpdate = {};
+
+  if (updates.name) {
+    dataToUpdate.name = updates.name;
   }
 
   if (updates.email && updates.email !== user.email) {
@@ -143,15 +176,7 @@ async function updateProfile(userId, updates) {
         message: "Email is already in use."
       };
     }
-  }
 
-  const dataToUpdate = {};
-
-  if (updates.name) {
-    dataToUpdate.name = updates.name;
-  }
-
-  if (updates.email) {
     dataToUpdate.email = updates.email;
   }
 
@@ -168,10 +193,10 @@ async function updateProfile(userId, updates) {
   };
 }
 
+// ====================
+// DELETE ACCOUNT
+// ====================
 
-/**
- * Deletes a user's account using Prisma.
- */
 async function deleteAccount(userId) {
   const user = await prisma.user.findUnique({
     where: {
@@ -198,13 +223,12 @@ async function deleteAccount(userId) {
   };
 }
 
+// ====================
+// CREATE ADMIN
+// ====================
 
-/**
- * Creates an administrator using Prisma.
- *
- * This is intended for controlled setup/testing only.
- * It is NOT exposed as a public registration endpoint.
- */
+// Used only for controlled setup/testing.
+// Normal registration always creates a USER account.
 async function createAdmin(name, email, password) {
   if (!name || !email || !password) {
     return {
@@ -244,10 +268,14 @@ async function createAdmin(name, email, password) {
   };
 }
 
+// ====================
+// EXPORTS
+// ====================
 
 module.exports = {
   register,
   login,
+  getProfile,
   updateProfile,
   deleteAccount,
   createAdmin

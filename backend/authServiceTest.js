@@ -2,63 +2,154 @@ const {
   register,
   login,
   updateProfile,
-  deleteAccount,
-  users
+  deleteAccount
 } = require("./authService");
 
+const { prisma } = require("../Server_Back/prisma/client");
+
 async function runTests() {
-  console.log("TEST 1: Valid registration");
-  console.log(
-    await register("Yingisani", "yingisani@example.com", "Password123")
-  );
+  // Use a unique email so the test can be run multiple times.
+  const testEmail = `auth-test-${Date.now()}@example.com`;
+  const password = "TestPassword123";
 
-  console.log("\nTEST 2: Duplicate email");
-  console.log(
-    await register("Another User", "yingisani@example.com", "Password456")
-  );
+  let userId = null;
 
-  console.log("\nTEST 3: Valid login");
-  console.log(
-    await login("yingisani@example.com", "Password123")
-  );
+  try {
+    console.log("========================================");
+    console.log("AUTHENTICATION AND PROFILE TESTS");
+    console.log("========================================");
 
-  console.log("\nTEST 4: Wrong password");
-  console.log(
-    await login("yingisani@example.com", "WrongPassword")
-  );
+    // TEST 1
+    console.log("\nTEST 1: Valid registration");
 
-  console.log("\nTEST 5: Unknown email");
-  console.log(
-    await login("unknown@example.com", "Password123")
-  );
+    const registrationResult = await register(
+      "Test User",
+      testEmail,
+      password
+    );
 
-  console.log("\nTEST 6: Empty email");
-  console.log(
-    await login("", "Password123")
-  );
+    console.log(registrationResult);
 
-  console.log("\nTEST 7: Empty name registration");
-  console.log(
-    await register("", "newuser@example.com", "Password123")
-  );
+    if (registrationResult.success) {
+      userId = registrationResult.userId;
+    }
 
-  console.log("\nTEST 8: Update profile");
-  console.log(
-    updateProfile(1, {
-      name: "Yingisani Mabaso"
-    })
-  );
+    // TEST 2
+    console.log("\nTEST 2: Duplicate email");
 
-  console.log("\nUSER AFTER PROFILE UPDATE");
-  console.log(users[0]);
+    const duplicateResult = await register(
+      "Another User",
+      testEmail,
+      "AnotherPassword123"
+    );
 
-  console.log("\nTEST 9: Delete account");
-  console.log(
-    deleteAccount(1)
-  );
+    console.log(duplicateResult);
 
-  console.log("\nUSERS AFTER DELETION");
-  console.log(users);
+    // TEST 3
+    console.log("\nTEST 3: Valid login");
+
+    const loginResult = await login(
+      testEmail,
+      password
+    );
+
+    // Do not print the actual JWT.
+    console.log({
+      success: loginResult.success,
+      message: loginResult.message,
+      tokenCreated: Boolean(loginResult.token)
+    });
+
+    // TEST 4
+    console.log("\nTEST 4: Wrong password");
+
+    console.log(
+      await login(testEmail, "WrongPassword")
+    );
+
+    // TEST 5
+    console.log("\nTEST 5: Unknown email");
+
+    console.log(
+      await login(
+        "unknown-user@example.com",
+        password
+      )
+    );
+
+    // TEST 6
+    console.log("\nTEST 6: Empty email");
+
+    console.log(
+      await login("", password)
+    );
+
+    // TEST 7
+    console.log("\nTEST 7: Empty name registration");
+
+    console.log(
+      await register(
+        "",
+        `invalid-${Date.now()}@example.com`,
+        password
+      )
+    );
+
+    // TEST 8
+    console.log("\nTEST 8: Update profile");
+
+    const updateResult = await updateProfile(
+      userId,
+      {
+        name: "Updated Test User"
+      }
+    );
+
+    console.log(updateResult);
+
+    const updatedUser = await prisma.user.findUnique({
+      where: {
+        id: userId
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    });
+
+    console.log("User after profile update:");
+    console.log(updatedUser);
+
+    // TEST 9
+    console.log("\nTEST 9: Delete account");
+
+    const deleteResult = await deleteAccount(userId);
+
+    console.log(deleteResult);
+
+    const deletedUser = await prisma.user.findUnique({
+      where: {
+        id: userId
+      }
+    });
+
+    console.log(
+      "User exists after deletion:",
+      deletedUser !== null
+    );
+
+    console.log("\n========================================");
+    console.log("AUTHENTICATION TESTS COMPLETED");
+    console.log("========================================");
+
+  } catch (error) {
+    console.error("\nTEST ERROR:");
+    console.error(error);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 runTests();

@@ -1,6 +1,7 @@
 const {
   createAdmin,
-  login
+  login,
+  deleteAccount
 } = require("./authService");
 
 const {
@@ -8,65 +9,131 @@ const {
   requireAdmin
 } = require("./authMiddleware");
 
+const { prisma } = require("../Server_Back/prisma/client");
+
 async function runTests() {
-  console.log("=== Admin Authorization Tests ===");
+  console.log("========================================");
+  console.log("ADMIN AUTHORIZATION TESTS");
+  console.log("========================================");
 
-  // Create an admin account
-  const adminResult = await createAdmin(
-    "Admin User",
-    "admin@habittracker.com",
-    "Admin123"
-  );
+  const adminEmail = `admin-test-${Date.now()}@habittracker.com`;
+  const adminPassword = "AdminTest123";
 
-  console.log("Create admin:", adminResult);
+  let adminId = null;
 
-  // Login as the admin
-  const loginResult = await login(
-    "admin@habittracker.com",
-    "Admin123"
-  );
+  try {
+    // TEST 1: Create ADMIN account
+    console.log("\nTEST 1: Create ADMIN account");
 
-  console.log("Admin login:", loginResult.success);
+    const adminResult = await createAdmin(
+      "Admin Test User",
+      adminEmail,
+      adminPassword
+    );
 
-  if (!loginResult.success) {
-    console.log("Admin login failed.");
-    return;
-  }
+    console.log(adminResult);
 
-  // Fake Express request containing the ADMIN JWT
-  const req = {
-    headers: {
-      authorization: `Bearer ${loginResult.token}`
+    if (!adminResult.success) {
+      console.log("Admin creation failed.");
+      return;
     }
-  };
 
-  const res = {
-    statusCode: 200,
+    adminId = adminResult.userId;
 
-    status(code) {
-      this.statusCode = code;
-      return this;
-    },
-
-    json(data) {
-      console.log(
-        "Authorization failed:",
-        this.statusCode,
-        data
-      );
-      return data;
-    }
-  };
-
-  authenticateToken(req, res, () => {
-    console.log("JWT authentication: PASSED");
-    console.log("Decoded role:", req.user.role);
-
-    requireAdmin(req, res, () => {
-      console.log("Admin authorization: PASSED");
-      console.log("ADMIN ACCESS GRANTED");
+    // Confirm the role directly from PostgreSQL.
+    const adminUser = await prisma.user.findUnique({
+      where: {
+        id: adminId
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
     });
-  });
+
+    console.log("Database role:", adminUser.role);
+
+    // TEST 2: Login as ADMIN
+    console.log("\nTEST 2: Login as ADMIN");
+
+    const loginResult = await login(
+      adminEmail,
+      adminPassword
+    );
+
+    console.log({
+      success: loginResult.success,
+      message: loginResult.message,
+      tokenCreated: Boolean(loginResult.token)
+    });
+
+    if (!loginResult.success) {
+      console.log("Admin login failed.");
+      return;
+    }
+
+    // TEST 3: Authenticate ADMIN JWT
+    console.log("\nTEST 3: Authenticate ADMIN JWT");
+
+    const req = {
+      headers: {
+        authorization: `Bearer ${loginResult.token}`
+      }
+    };
+
+    const res = {
+      statusCode: 200,
+
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+
+      json(data) {
+        console.log(
+          "Authorization rejected:",
+          this.statusCode,
+          data
+        );
+
+        return data;
+      }
+    };
+
+    authenticateToken(req, res, () => {
+      console.log("JWT authentication: PASSED");
+      console.log("Decoded role:", req.user.role);
+
+      // TEST 4: Check ADMIN authorization
+      console.log("\nTEST 4: Require ADMIN role");
+
+      requireAdmin(req, res, () => {
+        console.log("Admin authorization: PASSED");
+        console.log("ADMIN ACCESS GRANTED");
+      });
+    });
+
+  } catch (error) {
+    console.error("\nADMIN TEST ERROR:");
+    console.error(error);
+
+  } finally {
+    // Remove the temporary admin created by this test.
+    if (adminId !== null) {
+      const cleanupResult = await deleteAccount(adminId);
+
+      console.log("\nTemporary admin cleanup:");
+      console.log(cleanupResult);
+    }
+
+    await prisma.$disconnect();
+
+    console.log("\n========================================");
+    console.log("ADMIN AUTHORIZATION TESTS COMPLETED");
+    console.log("========================================");
+  }
 }
 
 runTests();

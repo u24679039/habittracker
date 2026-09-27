@@ -1,9 +1,6 @@
-// adminService.js
-// Part of: Authentication, Security & Admin (Yingisani Mabaso)
-// Handles basic group moderation functionality for administrators.
+// Temporary group data for the independent Admin demo.
+// This will later be integrated with the team's Micro-Group database model.
 
-// Temporary group storage.
-// This will later be replaced by the PostgreSQL/Prisma database.
 const groups = [
   {
     id: 1,
@@ -21,16 +18,15 @@ const groups = [
   }
 ];
 
-/**
- * Flags an existing group for moderation.
- *
- * @param {number} groupId
- * @param {string} reason
- * @returns {object}
- */
+// ====================
+// Flag Group
+// ====================
+
 function flagGroup(groupId, reason) {
+  const id = Number(groupId);
+
   const group = groups.find(
-    (group) => group.id === groupId
+    (currentGroup) => currentGroup.id === id
   );
 
   if (!group) {
@@ -40,45 +36,36 @@ function flagGroup(groupId, reason) {
     };
   }
 
-  if (!reason) {
-    return {
-      success: false,
-      message: "A reason is required."
-    };
-  }
-
   group.flagged = true;
-  group.flagReason = reason;
+  group.flagReason = reason || "No reason supplied";
   group.reviewed = false;
 
   return {
     success: true,
-    message: "Group flagged successfully."
+    message: "Group flagged successfully.",
+    group: group
   };
 }
 
+// ====================
+// Get Flagged Groups
+// ====================
 
-/**
- * Returns all groups currently flagged.
- *
- * @returns {Array}
- */
 function getFlaggedGroups() {
   return groups.filter(
     (group) => group.flagged === true
   );
 }
 
+// ====================
+// Review Flagged Group
+// ====================
 
-/**
- * Marks a flagged group as reviewed by an administrator.
- *
- * @param {number} groupId
- * @returns {object}
- */
 function reviewFlaggedGroup(groupId) {
+  const id = Number(groupId);
+
   const group = groups.find(
-    (group) => group.id === groupId
+    (currentGroup) => currentGroup.id === id
   );
 
   if (!group) {
@@ -99,20 +86,20 @@ function reviewFlaggedGroup(groupId) {
 
   return {
     success: true,
-    message: "Flagged group reviewed successfully."
+    message: "Group reviewed successfully.",
+    group: group
   };
 }
 
+// ====================
+// Remove Group
+// ====================
 
-/**
- * Removes an existing group.
- *
- * @param {number} groupId
- * @returns {object}
- */
 function removeGroup(groupId) {
+  const id = Number(groupId);
+
   const groupIndex = groups.findIndex(
-    (group) => group.id === groupId
+    (group) => group.id === id
   );
 
   if (groupIndex === -1) {
@@ -122,14 +109,17 @@ function removeGroup(groupId) {
     };
   }
 
-  groups.splice(groupIndex, 1);
+  const removedGroup = groups.splice(
+    groupIndex,
+    1
+  )[0];
 
   return {
     success: true,
-    message: "Group removed successfully."
+    message: "Group removed successfully.",
+    group: removedGroup
   };
 }
-
 
 module.exports = {
   flagGroup,
