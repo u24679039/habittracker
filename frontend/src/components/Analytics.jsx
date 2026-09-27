@@ -90,24 +90,24 @@ export default function Analytics({ userId }) {
         {trend && trend.length > 0 && (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trend}>
-              <CartesianGrid stroke="#eee" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(d) => d.slice(5)} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={32} />
+              <CartesianGrid stroke="#e6ddd1" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#7a7169' }} tickFormatter={(d) => d.slice(5)} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#7a7169' }} width={32} />
               <Tooltip formatter={(v) => `${v}%`} />
-              <Line type="monotone" dataKey="completionRate" stroke="#16181d" strokeWidth={2} dot />
+              <Line type="monotone" dataKey="completionRate" stroke="#292420" strokeWidth={2} dot={{ fill: '#292420', r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         )}
       </section>
 
       <div className="hf-grid hf-analytics-two-col" style={{ marginTop: 'var(--hf-space-4)' }}>
-        <section className="hf-card">
+        <section className="hf-hero-card">
           <h3 style={{ marginTop: 0 }}>Habit density heatmap</h3>
           {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
           {heatmap && <StreakHeatmap month={month} data={heatmap} />}
         </section>
 
-        <section className="hf-card">
+        <section className="hf-hero-card">
           <h3 style={{ marginTop: 0 }}>Per-habit breakdown</h3>
           {breakdown === null && !error && <p className="hf-empty-state">Loading breakdown...</p>}
           {breakdown && breakdown.length === 0 && (
@@ -120,7 +120,7 @@ export default function Analytics({ userId }) {
                 <div className="hf-progress-track">
                   <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
                 </div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--hf-text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)' }}>
                   {habit.completionRate}%
                 </span>
               </div>
@@ -133,7 +133,7 @@ export default function Analytics({ userId }) {
 
 function StatCard({ label, value }) {
   return (
-    <div className="hf-card">
+    <div className="hf-hero-card">
       <p className="hf-stat-label">{label}</p>
       <p className="hf-stat-value">{value ?? '—'}</p>
     </div>

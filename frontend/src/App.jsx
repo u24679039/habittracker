@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import Dashboard from './components/dashboard';
 import Analytics from './components/Analytics';
+import './styles/tokens.css';
 
 // Standalone demo shell for this workstream. Once auth is integrated
 // (Sprint 3), `userId` will come from the JWT session instead of this
 // hardcoded stand-in. Update this to whatever userId your seed script
 // actually printed if it's ever not 1 (see prisma/seed.js).
-const DEMO_USER_ID = 1;
+const DEMO_USER_ID = 5;
 
 /**
  * App
@@ -21,38 +22,22 @@ export default function App() {
 
   return (
     <div>
-      <nav style={navStyle}>
-        <strong style={{ marginRight: 24 }}>HabitForge</strong>
-        <button style={tabStyle(tab === 'dashboard')} onClick={() => setTab('dashboard')}>
+      <nav className="hf-nav">
+        <span className="hf-nav-brand">HabitTracker</span>
+        <button
+          className={`hf-nav-tab ${tab === 'dashboard' ? 'hf-nav-tab--active' : ''}`}
+          onClick={() => setTab('dashboard')}
+        >
           Dashboard
         </button>
-        <button style={tabStyle(tab === 'analytics')} onClick={() => setTab('analytics')}>
+        <button
+          className={`hf-nav-tab ${tab === 'analytics' ? 'hf-nav-tab--active' : ''}`}
+          onClick={() => setTab('analytics')}
+        >
           Analytics
         </button>
       </nav>
       {tab === 'dashboard' ? <Dashboard userId={DEMO_USER_ID} /> : <Analytics userId={DEMO_USER_ID} />}
     </div>
   );
-}
-
-const navStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-  padding: '12px 24px',
-  borderBottom: '1px solid #e4e4e4',
-  fontFamily: 'Inter, sans-serif',
-};
-
-/** Returns the nav-button style, bolding and darkening whichever tab is currently active. */
-function tabStyle(active) {
-  return {
-    background: 'none',
-    border: 'none',
-    fontSize: '0.95rem',
-    fontWeight: active ? 600 : 400,
-    color: active ? '#16181d' : '#6b7280',
-    cursor: 'pointer',
-    marginRight: 16,
-  };
 }

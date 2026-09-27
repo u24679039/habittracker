@@ -75,7 +75,7 @@ export default function Dashboard({ userId }) {
                 <div className="hf-progress-track">
                   <div className="hf-progress-fill" style={{ width: `${completionRate}%` }} />
                 </div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--hf-text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)' }}>
                   {completionRate}%
                 </span>
               </div>
@@ -88,7 +88,7 @@ export default function Dashboard({ userId }) {
         </section>
       </div>
 
-      <section className="hf-card" style={{ marginTop: 'var(--hf-space-4)' }}>
+      <section className="hf-hero-card" style={{ marginTop: 'var(--hf-space-4)' }}>
         <h3 style={{ marginTop: 0 }}>Group activity</h3>
         {activity === null && !error && <p className="hf-empty-state">Loading activity...</p>}
         {activity && activity.length === 0 && (
@@ -98,7 +98,7 @@ export default function Dashboard({ userId }) {
           activity.map((event) => (
             <div className="hf-habit-row" key={event.activity_id}>
               <span>{event.message}</span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--hf-text-muted)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--hf-ink-muted)' }}>
                 {new Date(event.timestamp).toLocaleString()}
               </span>
             </div>
