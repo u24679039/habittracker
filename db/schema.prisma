@@ -1,15 +1,17 @@
-// schema.prisma
-// My part: Social Activity Feed & Notifications (EH-61)
+// Notification queue & activity feed DB schema (EH-61)
 //
 // These model definitions are NOT connected to a real running database
-// yet - Prisma isn't even installed. This is the schema DESIGN, written
-// in Prisma's own syntax, showing exactly what the real tables will look
+// yet. This is the schema design, written
+// in Prisma's own syntax, showing what the real tables will look
 // like once this gets wired into the team's actual database.
 //
 // The Activity model and its enum values match what was already agreed
-// on in our group design document's class diagram, so this isn't a new
-// invention - it's that same design, now written in the format Prisma
-// actually expects.
+// on in the group design document's class diagram. Therefore, it is the same
+// design, written in the format Prisma expects
+
+// Activity mirrors an event happening in a group (a habit log, a milestone, someone
+// joining) and NotificationQueue mirrors "something waiting to be sent". Two enums (
+//  ActvityType, NotificationStatus) restrict those fields to a fixed set of valid values
 
 model Activity {
   id           Int          @id @default(autoincrement())
@@ -29,10 +31,10 @@ enum ActivityType {
   GROUP_ANNOUNCEMENT
 }
 
-// This is new for EH-61 specifically - representing pending/sent
-// notifications, separate from the Activity feed itself. An Activity
-// is "something that happened"; a NotificationQueue entry is "something
-// that still needs to be emailed/sent to someone."
+// This represents pending/sent notifications which is separate from the Activity feed
+// An Activity = something that happened
+// A NotificationQueue entry = something that still needs to be emailed/sent to someone
+
 model NotificationQueue {
   id        Int                @id @default(autoincrement())
   userId    Int
