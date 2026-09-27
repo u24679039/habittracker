@@ -75,7 +75,7 @@ export default function Analytics({ userId }) {
       `}</style>
 
       {/* Page Header with Export Buttons */}
-      <div className="hf-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="hf-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <h1>Analytics</h1>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <a href={analyticsApi.exportCsvUrl(userId)} className="hf-export-btn">
@@ -89,8 +89,8 @@ export default function Analytics({ userId }) {
 
       {error && <div className="hf-error-banner">Couldn't load analytics: {error}</div>}
 
-      {/* Top Stat Cards Grid */}
-      <div className="hf-grid hf-grid--stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+      {/* Top Stat Cards Grid - Responsive auto-fit */}
+      <div className="hf-grid hf-grid--stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <StatCard label="Current streak" value={summary && `${summary.currentStreak} days`} />
         <StatCard label="Highest streak" value={summary && `${summary.highestStreak} days`} />
         <StatCard label="Avg completion" value={summary && `${summary.avgCompletion}%`} />
@@ -114,15 +114,15 @@ export default function Analytics({ userId }) {
         )}
       </section>
 
-      {/* Two-Column Analytics Layout matching Dashboard Hero Card styling */}
-      <div className="hf-grid hf-analytics-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: 'var(--hf-space-4)' }}>
+      {/* Two-Column Analytics Layout matching Dashboard Hero Card styling - Responsive auto-fit */}
+      <div className="hf-grid hf-analytics-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginTop: 'var(--hf-space-4)' }}>
         
         {/* Monthly Streak Heatmap Card */}
         <section className="hf-hero-card">
           <h3 style={{ marginTop: 0, fontSize: '1.1rem', marginBottom: '1rem' }}>Habit density heatmap</h3>
           {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
           {heatmap && (
-            <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+            <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', overflowX: 'auto' }}>
               <StreakHeatmap month={month} data={heatmap} />
             </div>
           )}
@@ -138,9 +138,9 @@ export default function Analytics({ userId }) {
           {breakdown && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
               {breakdown.map((habit) => (
-                <div key={habit.habitName} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div key={habit.habitName} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.9rem', fontWeight: 500, minWidth: '120px' }}>{habit.habitName}</span>
-                  <div className="hf-progress-track" style={{ flex: 1, margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div className="hf-progress-track" style={{ flex: 1, minWidth: '120px', margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
                     <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%`, background: '#333', height: '100%' }} />
                   </div>
                   <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)', minWidth: '35px', textAlign: 'right' }}>

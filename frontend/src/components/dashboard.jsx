@@ -78,15 +78,22 @@ export default function Dashboard({ userId, onNavigate }) {
     <div className="hf-page">
       {/* Page Header Section */}
       <div className="hf-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Daily Habits</h1>
+      <h1>Daily Habits</h1>
       </div>
 
       {/* Conditional Error Banner */}
       {error && <div className="hf-error-banner">Couldn't load your dashboard: {error}</div>}
 
-      {/* Top Main Grid Layout: Daily Habits (Left Column) & Streaks/Heatmap (Right Column) */}
-      <div className="hf-grid hf-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
-        
+      {/* Top Main Grid Layout: Daily Habits (wider) & Streaks/Heatmap (narrower) with mobile responsiveness */}
+      <div className="hf-grid hf-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.4fr) minmax(280px, 1fr)', gap: '1.5rem' }}>
+        <style>{`
+          @media (max-width: 900px) {
+            .hf-dashboard-grid {
+              grid-template-columns: 1fr !important;
+            }
+          }
+        `}</style>
+
         {/* --- LEFT COLUMN: DAILY HABITS & TARGETS WIDGET --- */}
         <section className="hf-card">
           <div style={{ background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -111,13 +118,12 @@ export default function Dashboard({ userId, onNavigate }) {
           )}
           
           {progressEntries.map(([habitName, completionRate]) => (
-            <div className="hf-habit-row" key={habitName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #eee' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '160px' }}>
+            <div className="hf-habit-row" key={habitName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', padding: '0.75rem 0', borderBottom: '1px solid #eee' }}>              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '160px' }}>
                 <input type="checkbox" defaultChecked={completionRate === 100} style={{ cursor: 'pointer' }} />
                 <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{habitName}</span>
               </div>
               
-              <div className="hf-progress-track" style={{ flex: 1, margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+              <div className="hf-progress-track" style={{ flex: 1, minWidth: '100px', margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
                 <div className="hf-progress-fill" style={{ width: `${completionRate}%`, background: '#333', height: '100%' }} />
               </div>
               
@@ -143,7 +149,7 @@ export default function Dashboard({ userId, onNavigate }) {
             </div>
           ))}
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.8rem', background: '#eee', padding: '4px 8px', borderRadius: '12px', color: '#555' }}>Snooze (1)</span>
             <span style={{ fontSize: '0.8rem', background: '#eee', padding: '4px 8px', borderRadius: '12px', color: '#555' }}>Rest Day Mode</span>
             <span style={{ fontSize: '0.8rem', fontWeight: 'bold', marginLeft: 'auto', cursor: 'pointer' }}>+ Add Habit</span>
@@ -167,15 +173,15 @@ export default function Dashboard({ userId, onNavigate }) {
               </a>
             </div>
             
-            <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '6px', border: '1px solid #eee', textAlign: 'center' }}>
+            <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '6px', border: '1px solid #eee', textAlign: 'center', overflowX: 'auto' }}>
               <p style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>This Month's Progress</p>
               {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
               {heatmap && <StreakHeatmap month={month} data={heatmap} />}
             </div>
           </section>
 
-          {/* Current and Highest Streak Metrics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+         {/* Current and Highest Streak Metrics Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
             <section className="hf-card" style={{ padding: '1rem', textAlign: 'center' }}>
               <p className="hf-stat-label" style={{ fontSize: '0.8rem', color: '#666', margin: '0 0 4px 0' }}>Current Streak</p>
               <p className="hf-stat-value" style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: 0 }}>
@@ -219,7 +225,7 @@ export default function Dashboard({ userId, onNavigate }) {
         {activity && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
             {activity.map((event) => (
-              <div key={event.activity_id || event.id} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div key={event.activity_id || event.id} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <span style={{ fontSize: '0.9rem' }}>{event.message}</span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--hf-ink-muted)' }}>
                   {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

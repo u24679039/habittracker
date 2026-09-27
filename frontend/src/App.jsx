@@ -13,15 +13,15 @@ const HabitsStub = () => (
     <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e0e0e0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
       <h3>Active Habits</h3>
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>
-        <li style={{ padding: '1rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <li style={{ padding: '1rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <span>🧘 Meditate 10 min (Daily)</span>
           <span style={{ background: '#e6f4ea', color: '#137333', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>Active 100%</span>
         </li>
-        <li style={{ padding: '1rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <li style={{ padding: '1rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <span>📖 Read 20 pages (Daily)</span>
           <span style={{ background: '#e6f4ea', color: '#137333', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>Active 50%</span>
         </li>
-        <li style={{ padding: '1rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <li style={{ padding: '1rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <span>🏃 Exercise 30 min (Weekly)</span>
           <span style={{ background: '#e6f4ea', color: '#137333', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>Active 30%</span>
         </li>
@@ -34,7 +34,8 @@ const GroupsStub = () => (
   <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
     <h2>Micro-Groups & Accountability</h2>
     <p style={{ color: '#666', marginBottom: '1.5rem' }}>Collaborate with peers, share activity feeds, and maintain group streaks.</p>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+    {/* Made responsive using auto-fit */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
       <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
         <h3>Alpha Squad</h3>
         <p style={{ fontSize: '0.9rem', color: '#666' }}>4/5 members • Avg streak: 14 days</p>
@@ -50,8 +51,8 @@ const GroupsStub = () => (
 );
 
 const AccountModal = ({ onClose, currentRole }) => (
-  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-    <div style={{ background: '#fff', padding: '2rem', borderRadius: '8px', width: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
+    <div style={{ background: '#fff', padding: '2rem', borderRadius: '8px', width: '100%', maxWidth: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
       <h3>Account Settings</h3>
       <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>Logged in as: <strong>Demo Student (ID: {DEMO_USER_ID})</strong></p>
       <div style={{ margin: '1.5rem 0' }}>
@@ -76,8 +77,9 @@ export default function App() {
 
   return (
     <div>
-      <nav className="hf-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      {/* Responsive Navbar with flexWrap to stack neatly on smaller viewports */}
+      <nav className="hf-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', padding: '0.75rem 1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           <span className="hf-nav-brand">HabitTracker</span>
           <button
             className={`hf-nav-tab ${tab === 'dashboard' ? 'hf-nav-tab--active' : ''}`}
@@ -113,7 +115,7 @@ export default function App() {
               onClick={() => setShowNotifications(!showNotifications)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }}
               title="Notifications">
-              {/* Clean SVG Bell Icon replacing the emoji */}
+              {/* Clean SVG Bell Icon */}
               <svg 
                 width="20" 
                 height="20" 
