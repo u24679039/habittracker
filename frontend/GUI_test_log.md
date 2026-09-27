@@ -24,7 +24,7 @@ the same result. Both components were tested using a temporary local preview
 **Actual result:** ✅ Matches expected exactly.
 
 **Screenshot:**
-_[Insert screenshot of the rendered activity feed here]_
+_![Activity feed screenshot](activityFeedScreenshot.png)_
 
 ---
 
@@ -46,7 +46,7 @@ _[Insert screenshot of the rendered activity feed here]_
 **Actual result:** ✅ Matches expected exactly.
 
 **Screenshot:**
-_[Insert screenshot of the toast appearing here]_
+_![Activity feed screenshot](milestoneToastScreenshot.png)_
 
 ---
 
