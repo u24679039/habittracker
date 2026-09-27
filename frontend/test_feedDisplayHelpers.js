@@ -3,7 +3,11 @@
 // Run with: node frontend/test_feedDisplayHelpers.js
 
 const assert = require("assert");
-const { formatRelativeTime, getLatestMilestoneMessage } = require("./feedDisplayHelpers");
+const {
+  formatRelativeTime,
+  getLatestMilestoneMessage,
+  getInitials,
+} = require("./feedDisplayHelpers");
 
 let passed = 0;
 let failed = 0;
@@ -20,8 +24,6 @@ function test(description, fn) {
   }
 }
 
-// A fixed "now" so these tests give the same result every single time,
-// regardless of when they're actually run.
 const FIXED_NOW = new Date("2026-01-10T12:00:00");
 
 test("a timestamp seconds ago shows 'just now'", () => {
@@ -64,6 +66,18 @@ test("getLatestMilestoneMessage returns null when there's no milestone (edge cas
 
 test("getLatestMilestoneMessage returns null for a completely empty feed (edge case)", () => {
   assert.strictEqual(getLatestMilestoneMessage([]), null);
+});
+
+test("getInitials builds initials from a two-word name", () => {
+  assert.strictEqual(getInitials("Alex Rivera"), "AR");
+});
+
+test("getInitials handles a single-word name (edge case)", () => {
+  assert.strictEqual(getInitials("Monal"), "MO");
+});
+
+test("getInitials handles an empty name without crashing (edge case)", () => {
+  assert.strictEqual(getInitials(""), "?");
 });
 
 console.log(`\n${passed} passed, ${failed} failed.`);

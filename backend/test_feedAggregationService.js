@@ -20,8 +20,8 @@ function test(description, fn) {
   }
 }
 
-// My own small, controlled fake data - same reasoning as EH-30's tests:
-// I don't want these tests silently breaking if I ever tweak the real
+// Controlled fake data - same reasoning as EH-30's tests:
+// don't want these tests silently breaking if I ever tweak the real
 // stub data later.
 const fakeGetStreaks = (groupId) => {
   if (groupId === 1) {

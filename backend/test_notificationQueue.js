@@ -1,4 +1,3 @@
-// test_notificationQueue.js
 // Formal, automated tests for EH-61's notification queue
 // Run with: node backend/test_notificationQueue.js
 
@@ -63,8 +62,8 @@ test("processQueue does NOT re-send something already marked SENT (edge case)", 
     sendCount++;
   };
 
-  processQueue(countingSend); // first pass - sends it
-  processQueue(countingSend); // second pass - should skip it, already SENT
+  processQueue(countingSend); // first pass: sends it
+  processQueue(countingSend); // second pass: should skip it (already SENT)
 
   assert.strictEqual(sendCount, 1);
 });

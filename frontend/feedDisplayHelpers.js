@@ -1,19 +1,15 @@
-// feedDisplayHelpers.js
-// My part: Social Activity Feed & Notifications
-//
-// Small, PURE helper functions used by both frontend components
-// (ActivityFeed.jsx and MilestoneToast.jsx). Kept in their own file,
-// separate from the actual UI, specifically so this logic can be
-// formally unit tested with plain assert - the same way my backend
-// code is tested - without needing a browser or a rendering library.
+// Pure helper functions used by the frontend components
+// Kept seperate in their own file (apart from the actual UI), teherby allowing
+// logic to be formally unit tested with plain assert - same as
+// backend code. THerefore, does not need a browser.
 
 /**
  * Turns a timestamp into a short, human-readable relative time,
  * e.g. "3 hours ago", "just now", "2 days ago".
  * @param {Date} timestamp
- * @param {Date} [now] - defaults to the actual current time; tests pass
- *   a FIXED time in instead, so the result doesn't depend on the exact
- *   moment the test happens to run.
+ * @param {Date} [now] - defaults to the actual current time
+ *    tests pass a fixed time in instead, so the result doesn't depend on the exact
+ *   moment the test happens to run
  * @returns {string}
  */
 function formatRelativeTime(timestamp, now = new Date()) {
@@ -47,4 +43,22 @@ function getLatestMilestoneMessage(entries) {
   return milestoneEntries[0].message;
 }
 
-module.exports = { formatRelativeTime, getLatestMilestoneMessage };
+/**
+ * Turns a full name into 1-2 letter initials for an avatar circle,
+ * matching the style used in our group design document's mockups
+ * (e.g. "Alex Rivera" -> "AR").
+ * @param {string} name
+ * @returns {string}
+ */
+function getInitials(name) {
+  if (!name || name.trim().length === 0) {
+    return "?"; // edge case: no name given
+  }
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase(); // single name, e.g. "Monal" -> "MO"
+  }
+  return (parts[0][0] + parts[1][0]).toUpperCase(); // "Alex Rivera" -> "AR"
+}
+
+module.exports = { formatRelativeTime, getLatestMilestoneMessage, getInitials };

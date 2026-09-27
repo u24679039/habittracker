@@ -2,16 +2,15 @@
 // 
 // Building the actual shared activity feed for a
 // group - combining two different kinds of events (habit completions, and
-// milestone achievements) into one single, time-sorted list.
+// milestone achievements) into one single, time-sorted list
 //
-// This deliberately REUSES two things I already built rather than
-// duplicating logic:
-//   - getCurrentStreaksForGroup (streakQueryService.js, EH-30) - to find
-//     out who's in the group and their current streaks
-//   - checkForMilestone / buildMilestoneMessage (milestoneService.js, EH-41)
-//     - to work out if any of those streaks are milestone-worthy
+// Resuses two things already built (avoids logic duplication):
+//   - getCurrentStreaksForGroup (streakQueryService.js, EH-30): finds
+//     who's in the group and their current streaks
+//   - checkForMilestone / buildMilestoneMessage (milestoneService.js, EH-41):
+//      to work out if any of those streaks are milestones (7, 30, etc)
 //
-// Like EH-30, the actual habit-completion data is STUBBED for now,
+// Like EH-30, the actual habit-completion data is stubbed for now,
 // shaped to match the real HabitLog table my team already built (EH-28).
 
 const { getCurrentStreaksForGroup } = require("./streakQueryService");
@@ -26,9 +25,9 @@ const STUB_HABIT_LOGS = [
 ];
 
 /**
- * Finds a member's name from their userId. Small helper so the main
- * function below doesn't have to repeat this lookup logic twice (one for habit entries and 
- * once for milestone entries).
+ * Finds a member's name from their userId. 
+ * Helper so the main function below doesn't have to repeat this lookup logic twice 
+ * (one for habit entries and once for milestone entries).
  * Avoids duplicated logic.
  * @param {Array} members
  * @param {number} userId
@@ -41,17 +40,17 @@ function findMemberName(members, userId) {
 
 /**
  * Builds the combined, sorted activity feed for a group: habit completions
- * and milestone achievements together, most recent first.
+ * and milestone achievements together. Ordered in most recent first
  *
  * @param {number} groupId
- * @param {Function} [getStreaksFn] - defaults to the real getCurrentStreaksForGroup;
+ * @param {Function} [getStreaksFn] - defaults to the real getCurrentStreaksForGroup
  *   tests can swap in a fake version
  * @param {Array} [habitLogs] - defaults to stub habit log data
  * @param {Function} [checkMilestoneFn] - defaults to the real checkForMilestone
  * @returns {Array<{type: string, userId: number, userName: string, message: string, timestamp: Date}>}
  *
- * Used by: the (future) group feed API endpoint - see driver_feedEndpoint.js
- * for a demonstration of how a real route would call this.
+ * Used by: the (future) group feed API endpoint - driver_feedEndpoint.js
+
  */
 function buildGroupFeed(
   groupId,
@@ -77,8 +76,8 @@ function buildGroupFeed(
       };
     });
 
-  // Check every member's CURRENT streak - if it's a milestone, add a
-  // feed entry for it too. Reusing EH-41's logic here, not rewriting it.
+  // Check every member's current streak - if it's a milestone, add a
+  // feed entry for it too. Reusing EH-41's logic here
   const milestoneEntries = members
     .map((member) => {
       const milestone = checkMilestoneFn(member.currentStreak);
@@ -90,14 +89,14 @@ function buildGroupFeed(
         userId: member.userId,
         userName: member.name,
         message: buildMilestoneMessage(member.name, milestone),
-        timestamp: new Date(), // milestones are based on CURRENT streak. no moment a milestone 
-        // is logged (just true right now based on todays streak). Not a historical logged event
-        // the way a habit completion is
+        timestamp: new Date(), // milestones are based on current streak. no moment a milestone 
+        // is logged (just true right now based on todays streak). 
+        // Not a historical logged event the way a habit completion is
       };
     })
     .filter((entry) => entry !== null); // drop the non-milestone members
 
-  // Combine both kinds of entries, then sort newest-first.
+  // Combine both kinds of entries, then sort newest-first
   const combined = [...habitEntries, ...milestoneEntries];
   combined.sort((a, b) => b.timestamp - a.timestamp);
 

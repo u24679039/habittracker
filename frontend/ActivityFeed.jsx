@@ -1,31 +1,22 @@
-// ActivityFeed.jsx
-// My part: Social Activity Feed & Notifications
+// EH-59: Activity feed UI component
+// Displays a group's shared activity feed. Matches design of group design document
+// (Figure 23 - Micro-group dashboard)
 //
-// This handles EH-59: the actual UI that displays a group's shared
-// activity feed. It takes a list of feed entries (the exact same shape
-// that buildGroupFeed, EH-34, produces) and renders them, most recent
-// first, styled differently for milestones vs habit completions.
-//
-// Note on the import below: feedDisplayHelpers.js is written using
-// module.exports so it can be tested with plain Node (see
-// test_feedDisplayHelpers.js). Most modern bundlers (Vite, Create React
-// App) can import a CommonJS module like this directly, but if the real
-// project's bundler complains once this is integrated, the fix is just
-// changing that one file's export style - nothing here would need to change.
+// Takes a list of feed entries (the exact shape buildGroupFeed, EH-34,
+// produces) and orders them chronologically
 
 import React from "react";
-import { formatRelativeTime } from "./feedDisplayHelpers";
+import { formatRelativeTime, getInitials } from "./feedDisplayHelpers";
 import "./ActivityFeed.css";
 
-// Default/demo data, shaped exactly like what buildGroupFeed (EH-34)
-// returns. This lets the component be viewed and demoed on its own,
-// before it's wired up to the real API.
+// Allow component be viewed on its own before it's wired
+// up to the real API.
 const MOCK_FEED_ENTRIES = [
   {
     type: "milestone",
     userId: 1,
     userName: "Monal",
-    message: "🎉 Monal just hit a 7-day streak!",
+    message: "Monal just hit a 7-day streak!",
     timestamp: new Date(),
   },
   {
@@ -46,36 +37,49 @@ const MOCK_FEED_ENTRIES = [
 
 /**
  * Renders the shared group activity feed.
- * @param {{entries?: Array}} props - defaults to mock data if none is passed in
+ * @param {{entries?: Array, title?: string}} props
  */
-function ActivityFeed({ entries = MOCK_FEED_ENTRIES }) {
-  if (entries.length === 0) {
-    return (
-      <p className="activity-feed__empty">
-        No activity yet — log a habit to get things started.
-      </p>
-    );
-  }
-
+function ActivityFeed({ entries = MOCK_FEED_ENTRIES, title = "Group Activity" }) {
   return (
-    <ul className="activity-feed">
-      {entries.map((entry, index) => (
-        <li
-          key={index}
-          className={`activity-feed__item activity-feed__item--${entry.type}`}
-        >
-          <span className="activity-feed__marker" aria-hidden="true">
-            {entry.type === "milestone" ? "🔥" : "✓"}
-          </span>
-          <div className="activity-feed__content">
-            <p className="activity-feed__message">{entry.message}</p>
-            <span className="activity-feed__time">
-              {formatRelativeTime(entry.timestamp)}
-            </span>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="activity-feed-card">
+      <div className="activity-feed-card__header">
+        <h3>{title}</h3>
+      </div>
+
+      {entries.length === 0 ? (
+        <p className="activity-feed__empty">
+          No activity yet — log a habit to get things started.
+        </p>
+      ) : (
+        <ul className="activity-feed">
+          {entries.map((entry, index) => (
+            <li
+              key={index}
+              className={`activity-feed__item activity-feed__item--${entry.type}`}
+            >
+              <span className="activity-feed__avatar" aria-hidden="true">
+                {getInitials(entry.userName)}
+              </span>
+              <div className="activity-feed__content">
+                <p className="activity-feed__message">
+                  {entry.type === "milestone" && (
+                    <span className="activity-feed__badge">🔥 Milestone</span>
+                  )}
+                  {entry.message}
+                </p>
+                <span className="activity-feed__time">
+                  {formatRelativeTime(entry.timestamp)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="activity-feed-card__footer">
+        <span>View full activity →</span>
+      </div>
+    </div>
   );
 }
 

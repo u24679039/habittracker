@@ -1,8 +1,8 @@
-// Notification queue" side of EH-61
+// Notification queue side of EH-61
 // EH-61: Notification queue & activity feed DB schema
 
 // The schema.prisma file describes how this would eventually be stored in a real database
-// This file is the logic for it, running against a plain
+// This file is the logic, running against a plain
 // in-memory array as a stand-in for that real table (stub)
 //
 // Rather than sending an email the instant a milestone happens
@@ -13,11 +13,11 @@
 // Stand-in for the real NotificationQueue database table
 let queue = [];
 
-// Just used to generate a simple, unique-enough id for each queued item.
+// Used to generate a simple, different id for each queued item
 let nextId = 1;
 
 /**
- * Adds a new notification to the queue, marked as PENDING.
+ * Adds a new notification to the queue, marked as PENDING
  * @param {number} userId
  * @param {string} message
  * @returns {{id: number, userId: number, message: string, status: string, createdAt: Date, sentAt: Date|null}}
@@ -44,8 +44,8 @@ function enqueueNotification(userId, message) {
  *
  * @param {Function} sendFn - a function that actually sends a notification,
  *   given (userId, message). Defaults to a simple stub that always
- *   succeeds, since we're not wired up to real email sending here -
- *   in the real app, this would likely be sendMilestoneEmail from
+ *   succeeds, since we're not wired up to real email sending 
+ *   In the real app, this would likely be sendMilestoneEmail from
  *   emailService.js.
  * @returns {{sent: number, failed: number}}
  */
@@ -76,7 +76,7 @@ function processQueue(sendFn = () => Promise.resolve()) {
 
 /**
  * Returns the current state of the whole queue
- * Useful for testing and for demoing what's happened so far
+ * Useful for testing 
  * @returns {Array}
  */
 function getQueue() {

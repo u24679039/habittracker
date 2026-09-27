@@ -1,4 +1,3 @@
-// test_streakQueryService.js
 // Formal, automated tests for EH-30
 // Run with: node backend/test_streakQueryService.js
 
@@ -20,9 +19,9 @@ function test(description, fn) {
   }
 }
 
-// I'm passing in my OWN small set of fake users/memberships here, rather
-// than relying on the built-in stub data - that way these tests don't
-// silently break later if I ever change the default stub values above.
+// passing in owm small set of fake users/memberships here, rather
+// than relying on the built-in stub data
+// Therfore, tests don't silently break later if I ever change the default stub values above.
 const fakeUsers = [
   { userId: 1, name: "Alice", currentStreak: 10 },
   { userId: 2, name: "Bob", currentStreak: 5 },
@@ -61,6 +60,7 @@ test("a user with a 0-day streak (edge case) is still returned correctly", () =>
 
 test("works using the real default stub data too, when no fake data is passed in", () => {
   const result = getCurrentStreaksForGroup(100); // group 100 from the real stub data above
+  // proves default parameter mechanism works
   assert.strictEqual(result.length, 3);
 });
 
