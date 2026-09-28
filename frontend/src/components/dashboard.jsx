@@ -21,6 +21,7 @@ export default function Dashboard({ userId, onNavigate }) {
   // --- STATE HOOKS ---
   const [progress, setProgress] = useState(null);
   const [streaks, setStreaks] = useState(null);
+  const [summary, setSummary] = useState(null);
   const [heatmap, setHeatmap] = useState(null);
   const [activity, setActivity] = useState(null);
   const [error, setError] = useState(null);
@@ -33,12 +34,14 @@ export default function Dashboard({ userId, onNavigate }) {
 
     async function loadDashboardData() {
       try {
-        // Fetch all independent dashboard widgets and heatmap data concurrently
-        const [progressSummary, currentStreaks, heatmapData, groupActivity] = await Promise.all([
+        // Fetch all independent dashboard widgets and heatmap data concurrently.
+        // NOTE: the order here is the order tests must mock responses in.
+        const [progressSummary, currentStreaks, heatmapData, groupActivity, summaryStats] = await Promise.all([
           dashboardApi.getProgressSummary(userId),
           dashboardApi.getStreaks(userId),
           analyticsApi.getHeatmap(userId, month),
           dashboardApi.getGroupActivity(userId, 5),
+          analyticsApi.getSummary(userId),
         ]);
 
         if (cancelled) return;
@@ -47,6 +50,7 @@ export default function Dashboard({ userId, onNavigate }) {
         setStreaks(currentStreaks);
         setHeatmap(heatmapData);
         setActivity(groupActivity);
+        setSummary(summaryStats);
       } catch (err) {
         if (!cancelled) setError(err.message);
       }
@@ -67,12 +71,18 @@ export default function Dashboard({ userId, onNavigate }) {
     ? Math.round(progressEntries.reduce((acc, [_, rate]) => acc + rate, 0) / totalHabits) 
     : 0;
 
+  // getCurrentStreaks() returns { habitId: streakLength } as plain numbers, so the
+  // "Current Streak" card shows whichever habit is doing best right now.
   const streakValues = streaks ? Object.values(streaks) : [];
-  const currentStreaksList = streakValues.map(s => typeof s === 'object' ? s.current : s);
-  const highestStreaksList = streakValues.map(s => typeof s === 'object' ? s.highest : s);
-  
-  const bestCurrentStreak = currentStreaksList.length ? Math.max(...currentStreaksList) : 0;
-  const bestHighestStreak = highestStreaksList.length ? Math.max(...highestStreaksList) : bestCurrentStreak;
+  const bestCurrentStreak = streakValues.length ? Math.max(...streakValues) : 0;
+
+  // "Highest Streak" is an all-time figure, which the per-habit streaks endpoint does
+  // not return - it comes from the analytics summary (longest run across the user's
+  // full history), the same source the Analytics page uses, so the two pages always
+  // agree. Math.max guards the invariant that an all-time best can never be lower than
+  // the streak that is running right now (also covers the moment before the summary loads).
+  const allTimeBestStreak = summary?.highestStreak ?? 0;
+  const bestHighestStreak = Math.max(allTimeBestStreak, bestCurrentStreak);
 
   return (
     <div className="hf-page">
@@ -225,7 +235,7 @@ export default function Dashboard({ userId, onNavigate }) {
         {activity && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
             {activity.map((event) => (
-              <div key={event.activity_id || event.id} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div key={event.activityId} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <span style={{ fontSize: '0.9rem' }}>{event.message}</span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--hf-ink-muted)' }}>
                   {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
