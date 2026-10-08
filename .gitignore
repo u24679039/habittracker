@@ -1,0 +1,26 @@
+# Environment variables & secrets
+# .env
+# .env.*
+# !.env.example
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build outputs & Prisma generated files
+client/dist/
+client/build/
+
+# System files & logs
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+#AI agent and IDE config
+
+.AgentsAndConfig/
+Server_Back/AgentsAndConfig/.agents/skills/prisma-composer-core-concepts/SKILL.md
+Server_Back/AgentsAndConfig/.claude/skills/prisma-composer-core-concepts/SKILL.md
+Server_Back/AgentsAndConfig/.cursor/skills/prisma-composer-core-concepts/SKILL.md
+Server_Back/AgentsAndConfig/.devin/skills/prisma-composer-core-concepts/SKILL.md
