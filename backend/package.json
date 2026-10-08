@@ -1,0 +1,28 @@
+{
+  "name": "habittracker-dashboard-analytics-backend",
+  "version": "1.0.0",
+  "description": "Dashboard & Analytics workstream backend for HabitTracker (EPE 321, Group 11)",
+  "main": "src/server.js",
+  "scripts": {
+    "postinstall": "prisma generate",
+    "start": "node src/server.js",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "cors": "^2.8.6",
+    "express": "^4.19.2",
+    "json2csv": "^6.0.0-alpha.2",
+    "pdfkit": "^0.15.0",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "prisma": "^7.10.0",
+    "supertest": "^7.0.0"
+  }
+}
