@@ -1,4 +1,4 @@
-const ExportService = require('../src/services/exportService');
+const ExportService = require('../../DashboardAndAnalytics/services/exportService');
 
 describe('ExportService.toCsv', () => {
   test('converts an array of flat objects into a CSV string with a header row', () => {

@@ -1,5 +1,5 @@
 /** Minimal Prisma-Client-shaped test double: only the models/methods this class touches. */
-const dashboard = require('../src/models/dashboard');
+const dashboard = require('../../../backend/src/models/dashboard');
 
 /** Minimal Prisma-Client-shaped test double: only the models/methods this class touches. */
 function createMockPrisma() {

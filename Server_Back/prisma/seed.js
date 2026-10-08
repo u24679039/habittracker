@@ -1,11 +1,36 @@
+/**
+ * Seed script for local demo data.
+ *
+ * Run with: npx prisma db seed
+ * (or directly: node prisma/seed.js)
+ *
+ * Creates a small "team" for the demo:
+ *  - Demo Student (the account the frontend is pointed at, userId=1 in a
+ *    fresh database): 4 habits with deliberately varied completion
+ *    patterns (a star performer, a moderate one, a currently-broken
+ *    streak, and a high-consistency one), ~40 days of logs each - enough
+ *    for the trend chart, heatmap, and per-habit breakdown to all show
+ *    something visually interesting instead of flat/empty.
+ *  - Two more group members (Alex Rivera, Jordan Kim) with their own
+ *    habits/logs, so the "Group activity" feed has more than one voice.
+ *  - One shared group ("Alpha Squad") all three belong to, with 8
+ *    activity feed events spread across the last two weeks.
+ *
+ * Uses a fixed-seed PRNG (not Math.random) so re-running this before your
+ * demo produces the *same* data every time - useful if you've already
+ * taken GUI test log screenshots against a particular run and don't want
+ * the numbers to shift.
+ *
+ * Safe to re-run: deletes and recreates all three demo users first.
+ */
 const { prisma } = require('./client');
 const Habit = require('../HabitTracking/Habit');
-
+// PLease add your DB seed code to this func 
 /*
 Habit Tracking
 Start
 */
-// PLease add your DB seed code to this func 
+
 
 async function fillDb() {
     try {

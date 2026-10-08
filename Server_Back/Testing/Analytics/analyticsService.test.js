@@ -1,4 +1,4 @@
-const AnalyticsService = require('../src/services/analyticsService');
+const AnalyticsService = require('../../DashboardAndAnalytics/services/analyticsService');
 
 function createMockPrisma() {
   return {

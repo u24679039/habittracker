@@ -33,7 +33,7 @@ jest.mock('../src/db/prismaClient', () => ({
 // Required only after the mock above is registered, so every route that
 // touches `require('../db/prismaClient')` gets the mock instead of a real
 // (ungenerated) Prisma Client.
-const app = require('../src/app');
+const app = require('../../DashboardAndAnalytics/app');
 
 describe('GET /api/analytics/export.csv', () => {
   test('returns a 400 with a clear error when userId is missing', async () => {
