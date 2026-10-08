@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Auth
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  name      String
+  CreatedAt DateTime   @default(now())
+  habits    Habit[]
+  logs      HabitLog[]
+}
+
+// habits
+model Habit {
+  habitId Int    @id @default(autoincrement())
+  userId  Int
+  title   String
+  description String?
+
+  // Keeping this as an Int on purpose - the app code (Habit.js) uses
+  // parseInt() when it saves or updates this value, to match. If
+  // fractional targets ever become something you actually need (5.5 km,
+  // say), this needs to become a Float first, and the app code would need
+  // to switch back to parseFloat().
+  targetValue Int
+  targetUnit  String
+  frequency   String @default("daily")
+
+  // Added a default here so a habit can never quietly end up with an
+  // empty status string sitting in the database - a couple of spots in
+  // the app used to let that happen before this got a default on the code
+  // side too.
+  StatusOfHabit String @default("ACTIVE")
+
+  Activated  Boolean   @default(true)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  archivedAt DateTime?
+
+  // Added a default of 0 - the app always supplies a value today, but this
+  // is a bit of a safety net in case something else ever inserts a habit
+  // directly (a seed script, a manual fix, whatever) and forgets to.
+  currValue Int @default(0)
+
+  logs HabitLog[]
+
+  // GET /api/users/:userId/habits filters on userId on basically every
+  // request, so it's worth having an index here rather than making
+  // Postgres scan the whole table once it has real data in it.
+  @@index([userId])
+}
+
+// analytics and logs
+model HabitLog {
+  logId Int @id @default(autoincrement())
+
+  habitId Int
+  habit   Habit @relation(fields: [habitId], references: [habitId], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  value       Float?
+  status      String
+
+  // Same idea as StatusOfHabit above - the app always defaults note to ""
+  // itself, but giving it a default here too means that guarantee holds
+  // even for rows that don't come through the app layer.
+  note String @default("")
+
+  // habitId gets queried constantly - streaks, history, completion rate,
+  // "did we already log this today" - and userId shows up a fair bit too.
+  // These indexes are what keep those lookups fast once there's a real
+  // amount of data in here.
+  @@index([habitId])
+  @@index([userId])
+}
+
+// One thing worth flagging: the defaults and indexes added above are
+// additive and shouldn't break any existing data, but editing this file
+// alone doesn't change anything in the actual database - you'll still
+// need to run something like `prisma migrate dev` to apply them.
