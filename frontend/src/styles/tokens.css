@@ -1,0 +1,268 @@
+/*
+  Design tokens for the Dashboard & Analytics pages.
+
+  Grounded in the app's own name - HabitTracker, forging a habit through
+  repeated effort - rather than a generic SaaS palette: warm stone
+  neutrals instead of stark white, one deep copper "ember" accent spent
+  entirely on streak numbers and primary actions (the genuinely most
+  important content on this dashboard), and a quiet moss green reserved
+  strictly for "completed" states, never used decoratively.
+*/
+:root {
+  --hf-paper: #faf7f2;
+  --hf-surface: #ffffff;
+  --hf-line: #e6ddd1;
+  --hf-ink: #292420;
+  --hf-ink-muted: #7a7169;
+
+  --hf-ember: #a8481c;
+  --hf-ember-hover: #8a3a16;
+  --hf-ember-soft: #f3e2d5;
+
+  --hf-moss: #5b7a52;
+  --hf-moss-soft: #e7ede4;
+
+  --hf-danger: #a3312a;
+  --hf-danger-soft: #f5e2df;
+
+  --hf-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --hf-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+
+  --hf-radius: 12px;
+  --hf-radius-sm: 8px;
+  --hf-space-1: 4px;
+  --hf-space-2: 8px;
+  --hf-space-3: 16px;
+  --hf-space-4: 24px;
+  --hf-space-5: 32px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--hf-paper);
+  margin: 0;
+}
+
+.hf-page {
+  font-family: var(--hf-font);
+  color: var(--hf-ink);
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--hf-space-4);
+}
+
+.hf-page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--hf-space-4);
+}
+
+.hf-page-header h1 {
+  font-family: var(--hf-font-display);
+  font-weight: 600;
+  font-size: 1.9rem;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--hf-ink);
+}
+
+.hf-card {
+  background: var(--hf-surface);
+  border: 1px solid var(--hf-line);
+  border-radius: var(--hf-radius);
+  padding: var(--hf-space-3) var(--hf-space-4);
+}
+
+.hf-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* Hero treatment: streak/stat cards get the one bold moment on the page -
+   a warm ember-tinted surface, no border, and a large serif number - kept
+   deliberately different from the quiet plain-white cards around them. */
+.hf-hero-card {
+  background: var(--hf-ember-soft);
+  border: none;
+  border-radius: var(--hf-radius);
+  padding: var(--hf-space-3) var(--hf-space-4);
+}
+
+.hf-grid {
+  display: grid;
+  gap: var(--hf-space-3);
+}
+
+.hf-grid--stats {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.hf-dashboard-grid {
+  grid-template-columns: 2fr 1fr;
+}
+
+.hf-analytics-two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 640px) {
+  .hf-grid--stats,
+  .hf-dashboard-grid,
+  .hf-analytics-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .hf-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hf-space-2);
+  }
+
+  .hf-page {
+    padding: var(--hf-space-3);
+  }
+}
+
+.hf-habit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--hf-space-2) 0;
+  border-bottom: 1px solid var(--hf-line);
+}
+
+.hf-habit-row:last-child {
+  border-bottom: none;
+}
+
+.hf-progress-track {
+  flex: 1;
+  height: 6px;
+  background: var(--hf-line);
+  border-radius: 4px;
+  margin: 0 var(--hf-space-3);
+  overflow: hidden;
+}
+
+.hf-progress-fill {
+  height: 100%;
+  background: var(--hf-ember);
+  border-radius: 4px;
+}
+
+.hf-button {
+  border: 1px solid var(--hf-ember);
+  background: var(--hf-ember);
+  color: white;
+  border-radius: var(--hf-radius-sm);
+  padding: 7px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.hf-button:hover {
+  background: var(--hf-ember-hover);
+  border-color: var(--hf-ember-hover);
+}
+
+.hf-button--ghost {
+  background: transparent;
+  color: var(--hf-ember);
+}
+
+.hf-button--ghost:hover {
+  background: var(--hf-ember-soft);
+}
+
+.hf-empty-state {
+  color: var(--hf-ink-muted);
+  font-size: 0.9rem;
+  padding: var(--hf-space-4) 0;
+  text-align: center;
+}
+
+.hf-error-banner {
+  background: var(--hf-danger-soft);
+  color: var(--hf-danger);
+  border-radius: var(--hf-radius-sm);
+  padding: var(--hf-space-2) var(--hf-space-3);
+  margin-bottom: var(--hf-space-3);
+  font-size: 0.9rem;
+}
+
+/* Stat card: label in the quiet Inter voice, value in the display serif -
+   this pairing is what makes the streak numbers read as the page's hero
+   content instead of just another data point. */
+.hf-stat-label {
+  font-size: 0.8rem;
+  color: var(--hf-ink-muted);
+  margin: 0 0 var(--hf-space-1);
+}
+
+.hf-stat-value {
+  font-family: var(--hf-font-display);
+  font-size: 2.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--hf-ember);
+}
+
+/* Nav */
+.hf-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--hf-space-1);
+  padding: 14px 24px;
+  background: var(--hf-surface);
+  border-bottom: 1px solid var(--hf-line);
+}
+
+.hf-nav-brand {
+  font-family: var(--hf-font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--hf-ink);
+  margin-right: 28px;
+}
+
+.hf-nav-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--hf-font);
+  font-size: 0.92rem;
+  padding: 6px 4px;
+  margin-right: 20px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  color: var(--hf-ink-muted);
+}
+
+.hf-nav-tab:hover {
+  color: var(--hf-ink);
+}
+
+.hf-nav-tab--active {
+  color: var(--hf-ink);
+  font-weight: 600;
+  border-bottom-color: var(--hf-ember);
+}
+
+/* Visible keyboard focus - default outlines get stripped by some of the
+   styles above (border: none on buttons, etc.), so restore an explicit,
+   visible one rather than leaving keyboard users with no indicator. */
+.hf-button:focus-visible,
+.hf-nav-tab:focus-visible {
+  outline: 2px solid var(--hf-ember);
+  outline-offset: 2px;
+}
