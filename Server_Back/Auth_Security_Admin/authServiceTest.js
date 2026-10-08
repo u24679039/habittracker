@@ -5,7 +5,7 @@ const {
   deleteAccount
 } = require("./authService");
 
-const { prisma } = require("../Server_Back/prisma/client");
+const { prisma } = require("../prisma/client");
 
 async function runTests() {
   // Use a unique email so the test can be run multiple times.

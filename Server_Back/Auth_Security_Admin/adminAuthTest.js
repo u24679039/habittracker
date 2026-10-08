@@ -9,7 +9,7 @@ const {
   requireAdmin
 } = require("./authMiddleware");
 
-const { prisma } = require("../Server_Back/prisma/client");
+const { prisma } = require("../prisma/client");
 
 async function runTests() {
   console.log("========================================");

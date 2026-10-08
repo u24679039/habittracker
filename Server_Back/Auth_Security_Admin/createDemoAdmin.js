@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const { createAdmin } = require("./authService");
-const { prisma } = require("../Server_Back/prisma/client");
+const { prisma } = require("../prisma/client");
 
 async function main() {
   const name = process.env.DEMO_ADMIN_NAME;
