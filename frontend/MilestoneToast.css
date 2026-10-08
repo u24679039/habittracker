@@ -1,0 +1,40 @@
+/* MilestoneToast.css
+   My part: Social Activity Feed & Notifications (EH-60)
+*/
+
+.milestone-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #2f6f4e;
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #e8a33d;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 14px rgba(28, 43, 51, 0.18);
+  max-width: 320px;
+}
+
+.milestone-toast__message {
+  flex: 1;
+}
+
+.milestone-toast__close {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.8;
+}
+
+.milestone-toast__close:hover {
+  opacity: 1;
+}
