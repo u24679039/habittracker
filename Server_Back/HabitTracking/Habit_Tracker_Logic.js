@@ -6,13 +6,13 @@ const Habit = require('./Habit');
 const Habit_Log = require('./Habit_Log');
 //--------------------------------Testing----------------------------------
 //-------------------------------------------------------------------------
-//const HabitLogic = require('./Testing');
+const HabitLogic = require('../Testing/HabitTrackTesting');
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
 const express = require('express');
 const cors = require('cors');
-const { prisma } = require('./prisma/client'); // pulls from client.js
+const { prisma } = require('../prisma/client'); // pulls from client.js
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------

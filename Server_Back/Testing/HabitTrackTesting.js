@@ -1,14 +1,14 @@
 //--------------------------------File Import block------------------------
 //-------------------------------------------------------------------------
-const Habit = require('./Habit');
+const Habit = require('../HabitTracking/Habit');
 // const myHabit = new Habit(1, 101, "Exercise", "Daily workout", 30, "minutes", "DAILY", "ACTIVE");
 // myHabit.create();
-const HabitLog = require('./Habit_Log');
-const HabitLogic = require('./Habit_Tracker_Logic');
+const HabitLog = require('../HabitTracking/Habit_Log');
+const HabitLogic = require('../HabitTracking/Habit_Tracker_Logic');
 
 const express = require('express');
 const cors = require('cors');
-const { prisma } = require('./prisma/client'); // pulls from client.js
+const { prisma } = require('../prisma/client'); // pulls from client.js
 //-------------------------------------------------------------------------
 
 const app = express();
@@ -37,7 +37,12 @@ async function Testing() {
     allTests = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33];
     testsPassed = [];
     testsNotPassed = [];
-    await fillDb();
+    const readingHabit = await prisma.habit.findFirst({
+        where: { title: "Read book " }
+    });
+    if (readingHabit) {
+        test21habitId = readingHabit.id; 
+    }
     //---------------------------------------------------
     //----------------------Call Funcs-------------------
     //---------------------------------------------------
@@ -202,58 +207,7 @@ async function Testing() {
     //---------------------------------------------------
     //---------------------------------------------------
 }
-async function fillDb() {
-    try {
-        await prisma.user.upsert({
-            where: { id: 1 },
-            update: {},
-            create: { id: 1, email: "test@example.com", password: "password", name: "Test User" }
-        });
-        const userId = 1;
-        //create 4 habits
-        //constructor(habitId,userId,name,description,targetValue,TargetUnit,Frequency,HabitStatus="",Activated,DateCreated)
-        const habit1 = new Habit(null, userId, "Morning Run", "Run 5km", 5, "km", "DAILY", "", true, new Date());
-        const savedHabit1 = await habit1.save();
 
-        const habit2 = new Habit(null, userId, "Read book ", "Read 20 pages", 20, "pages", "DAILY", "", true, new Date());
-        const savedHabit2 = await habit2.save();
-        test21habitId = savedHabit2.habitId;
-
-        const habit3 = new Habit(null, userId, "Meditation", "10 mins mindfulness", 10, "minutes", "DAILY", "", true, new Date());
-        const savedHabit3 = await habit3.save();
-
-        const habit4 = new Habit(null, userId, "Drink Water", "Drink 2L", 2, "L", "DAILY", "", true, new Date());
-        const savedHabit4 = await habit4.save();
-
-        // Back-filling a week and a bit of history for the morning run
-        // habit: 8 days completed in a row, then 2 missed days after that,
-        // so the streak/completion-rate tests further down have something
-        // real to chew on.
-        const startDate = new Date('2026-08-01T00:00:00Z');
-        for (let i = 0; i < 8; i++) {
-            const logDate = new Date(startDate);
-            logDate.setDate(logDate.getDate() + i);
-            await habit1.logCompletion(logDate, 5, `completed day${i + 1}`);
-        }
-        for (let i = 8; i < 10; i++) {
-            const missedDate = new Date(startDate);
-            missedDate.setDate(missedDate.getDate() + i);
-            await habit1.logMissed(missedDate, 0, `Missed day${i + 1}`);
-        }
-        // And 3 completed days in a row for the reading habit, ending
-        // today, so Test21 has a real 3-day streak to find.
-        const h2StartDate = new Date();
-        h2StartDate.setHours(0, 0, 0, 0);
-        h2StartDate.setDate(h2StartDate.getDate() - 2);
-        for (let i = 0; i < 3; i++) {
-            const logDate = new Date(h2StartDate);
-            logDate.setDate(logDate.getDate() + i);
-            await habit2.logCompletion(logDate, 20, `Completed reading day ${i + 1}`);
-        }
-    } catch (error) {
-        console.error("Error seeding DB", error);
-    }
-}
 //No.
 // Habit Create:
 // Tested Class
