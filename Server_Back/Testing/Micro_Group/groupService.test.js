@@ -1,41 +1,41 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const proxyquire = require("proxyquire").noCallThru();
+// Mock Prisma before loading the service so no test contacts PostgreSQL.
+jest.mock("../../prisma/prismaClient", () => {
+    const sinon = require("sinon");
+    return {
+        accountabilityGroup: {
+            findUnique: sinon.stub(),
+            create: sinon.stub(),
+            update: sinon.stub(),
+            delete: sinon.stub()
+        },
+        groupMembership: {
+            findUnique: sinon.stub(),
+            count: sinon.stub(),
+            create: sinon.stub(),
+            findMany: sinon.stub(),
+            delete: sinon.stub(),
+            deleteMany: sinon.stub(),
+            update: sinon.stub()
+        },
+        $transaction: sinon.stub()
+    };
+});
 
-const findUniqueStub = sinon.stub();
-const groupCreateStub = sinon.stub();
-const membershipCreateStub = sinon.stub();
-const transactionStub = sinon.stub();
-const membershipFindUniqueStub = sinon.stub();
-const membershipCountStub = sinon.stub();
-const groupUpdateStub = sinon.stub();
-const membershipDeleteManyStub = sinon.stub();
-const groupDeleteStub = sinon.stub();
-const membershipFindManyStub = sinon.stub();
-const membershipDeleteStub = sinon.stub();
-const membershipUpdateStub = sinon.stub();
-
-// replace the real Prisma client with mocked database operations for isolated unit testing
-const prismaMock =
-{
-    accountabilityGroup:
-    {
-        findUnique: findUniqueStub,
-        create: groupCreateStub
-    },
-
-    groupMembership:
-    {
-        findUnique: membershipFindUniqueStub,
-        count: membershipCountStub,
-        create: membershipCreateStub,
-        findMany: membershipFindManyStub,
-        delete: membershipDeleteStub,
-        update: membershipUpdateStub
-    },
-
-    $transaction: transactionStub
-};
+const prismaMock = require("../../prisma/prismaClient");
+const findUniqueStub = prismaMock.accountabilityGroup.findUnique;
+const groupCreateStub = prismaMock.accountabilityGroup.create;
+const membershipCreateStub = prismaMock.groupMembership.create;
+const transactionStub = prismaMock.$transaction;
+const membershipFindUniqueStub = prismaMock.groupMembership.findUnique;
+const membershipCountStub = prismaMock.groupMembership.count;
+const groupUpdateStub = prismaMock.accountabilityGroup.update;
+const membershipDeleteManyStub = prismaMock.groupMembership.deleteMany;
+const groupDeleteStub = prismaMock.accountabilityGroup.delete;
+const membershipFindManyStub = prismaMock.groupMembership.findMany;
+const membershipDeleteStub = prismaMock.groupMembership.delete;
+const membershipUpdateStub = prismaMock.groupMembership.update;
 
 const {
     generateInviteCode,
@@ -53,11 +53,7 @@ const {
     updateGroup,
     deleteGroup,
     getUserGroups
-} = proxyquire("../services/groupService",
-{
-    "../prismaClient": prismaMock
-});
-
+} = require("../../Micro_Groups/services/groupService");
 
 describe("generateInviteCode", function()
 {
@@ -189,7 +185,7 @@ describe("createGroup", function()
         findUniqueStub.resolves(null);
         groupCreateStub.resolves({
             groupId: 1,
-            invitationCode: "AB7KQ3"
+             inviteCode: "AB7KQ3"
         });
         membershipCreateStub.resolves({});
 
@@ -504,12 +500,12 @@ describe("getMembers", function()
                 userId: 10,
                 groupId: 1,
                 role: "OWNER",
-                name: "User 10"
+                name: "User Ten"
             }
         ];
 
         findUniqueStub.resolves({ groupId: 1 });
-        membershipFindManyStub.resolves(memberships);
+        membershipFindManyStub.resolves(memberships.map(member => ({ ...member, user: { name: "User Ten" } })));
 
         assert.deepStrictEqual(await getMembers(1), expectedMemberships);
         assert.strictEqual(membershipFindManyStub.calledOnce, true);
@@ -861,7 +857,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         membershipFindUniqueStub.resolves({
@@ -903,7 +899,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         const result = await updateGroup(
@@ -921,7 +917,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         membershipCountStub.resolves(4);
@@ -941,7 +937,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         groupUpdateStub.rejects(new Error("database error"));
@@ -993,7 +989,7 @@ describe("deleteGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         membershipFindUniqueStub.resolves({
@@ -1015,7 +1011,7 @@ describe("deleteGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         const result = await deleteGroup(1, 20);
@@ -1042,7 +1038,7 @@ describe("deleteGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         groupDeleteStub.rejects(new Error("database error"));

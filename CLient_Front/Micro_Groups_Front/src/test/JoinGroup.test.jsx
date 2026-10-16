@@ -6,6 +6,11 @@ describe("JoinGroup", () =>
 {
     beforeEach(() =>
     {
+        localStorage.setItem("token", "test-jwt-token");
+    });
+
+    beforeEach(() =>
+    {
         global.fetch = vi.fn();
     });
 
@@ -43,7 +48,8 @@ describe("JoinGroup", () =>
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         invitationCode: "KXGW8M",

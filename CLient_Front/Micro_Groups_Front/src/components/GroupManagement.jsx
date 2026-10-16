@@ -34,7 +34,12 @@ function GroupManagement({ groupId, currentUserId, onDelete })
         try
         {
             const groupResponse = await fetch(
-                `http://localhost:3000/groups/${groupId}`
+                `http://localhost:3000/groups/${groupId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
             const groupData = await groupResponse.json();
 
@@ -45,7 +50,12 @@ function GroupManagement({ groupId, currentUserId, onDelete })
             }
 
             const membersResponse = await fetch(
-                `http://localhost:3000/groups/${groupId}/members`
+                `http://localhost:3000/groups/${groupId}/members`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
             const membersData = await membersResponse.json();
 
@@ -94,7 +104,10 @@ function GroupManagement({ groupId, currentUserId, onDelete })
                 `http://localhost:3000/groups/${groupId}`,
                 {
                     method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({
                         userId: currentUserId,
                         name: form.get("groupName").trim(),
@@ -150,7 +163,10 @@ function GroupManagement({ groupId, currentUserId, onDelete })
                 `http://localhost:3000/groups/${groupId}`,
                 {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({ userId: currentUserId })
                 }
             );
@@ -197,7 +213,10 @@ function GroupManagement({ groupId, currentUserId, onDelete })
                 `http://localhost:3000/groups/${groupId}/members/${memberUserId}`,
                 {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({ userId: currentUserId })
                 }
             );
@@ -242,7 +261,10 @@ function GroupManagement({ groupId, currentUserId, onDelete })
                 `http://localhost:3000/groups/${groupId}/members/${memberUserId}/role`,
                 {
                     method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({
                         userId: currentUserId,
                         role

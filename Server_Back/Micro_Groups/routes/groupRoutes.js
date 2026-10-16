@@ -1,7 +1,9 @@
 const express = require("express");
 const groupController = require('../controllers/groupController')
+const { authenticateToken } = require("../../Auth_Security_Admin/authMiddleware");
 
 const router = express.Router();
+router.use(authenticateToken);
 
 router.post("/", groupController.createGroup);
 router.post("/join", groupController.joinGroup);

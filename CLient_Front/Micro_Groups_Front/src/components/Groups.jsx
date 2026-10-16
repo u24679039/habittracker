@@ -40,7 +40,12 @@ function Groups({
         try
         {
             const response = await fetch(
-                `http://localhost:3000/groups/user/${currentUserId}`
+                `http://localhost:3000/groups/user/${currentUserId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
 
             const data = await response.json();
@@ -61,7 +66,12 @@ function Groups({
                     const groupId = membership.group.groupId;
 
                     const response = await fetch(
-                        `http://localhost:3000/groups/${groupId}/members`
+                        `http://localhost:3000/groups/${groupId}/members`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${localStorage.getItem("token")}`
+                            }
+                        }
                     );
 
                     const members = await response.json();
@@ -136,7 +146,10 @@ function Groups({
                 `http://localhost:3000/groups/${groupId}/leave`,
                 {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({ userId: currentUserId })
                 }
             );

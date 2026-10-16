@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const prisma = require("../prismaClient");
+const prisma = require("../../prisma/prismaClient");
 
 
 // Generate a secure random 6-character invitation code.
@@ -29,7 +29,7 @@ async function generateUniqueInviteCode()
         code = generateInviteCode();
 
         existingGroup = await prisma.accountabilityGroup.findUnique({
-            where: { invitationCode: code }
+            where: { inviteCode: code }
         });
     }
     while (existingGroup);
@@ -48,7 +48,7 @@ async function validateInviteCode(invitationCode)
     }
 
     const existingGroup = await prisma.accountabilityGroup.findUnique({
-        where: { invitationCode }
+        where: { inviteCode: invitationCode }
     });
 
     return existingGroup !== null;
@@ -83,9 +83,9 @@ async function createGroup(name, description, maxMembers, creatorId)
                 data: {
                     name,
                     description,
-                    invitationCode,
+                    inviteCode: invitationCode,
                     maxMembers,
-                    creatorId,
+                    createdBy: creatorId,
                     isPublic: false,
                     isActive: true
                 }
@@ -101,7 +101,7 @@ async function createGroup(name, description, maxMembers, creatorId)
 
             return {
                 groupId: group.groupId,
-                invitationCode: group.invitationCode
+                invitationCode: group.inviteCode
             };
         });
     }
@@ -198,7 +198,7 @@ async function joinGroup(invitationCode, userId)
     try
     {
         const group = await prisma.accountabilityGroup.findUnique({
-            where: { invitationCode }
+            where: { inviteCode: invitationCode }
         });
 
         if (!group)
@@ -241,14 +241,6 @@ async function getMembers(groupId)
         if (!group)
             return null;
 
-        const mockUserNames = {
-            1: "Alex Johnson",
-            2: "Jordan Smith",
-            3: "Taylor Williams",
-            4: "Morgan Brown",
-            5: "Casey Davis"
-        };
-
         const memberships = await prisma.groupMembership.findMany({
             where: { groupId },
             select: {
@@ -256,13 +248,18 @@ async function getMembers(groupId)
                 userId: true,
                 groupId: true,
                 joinedAt: true,
-                role: true
+                role: true,
+                user: {
+                    select: {
+                        name: true
+                    }
+                }
             }
         });
 
-        return memberships.map(member => ({
+        return memberships.map(({ user, ...member }) => ({
             ...member,
-            name: mockUserNames[member.userId] || `User ${member.userId}`
+            name: user.name
         }));
     }
     catch

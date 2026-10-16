@@ -4,6 +4,11 @@ import GroupManagement from "../components/GroupManagement";
 
 describe("GroupManagement", () =>
 {
+    beforeEach(() =>
+    {
+        localStorage.setItem("token", "test-jwt-token");
+    });
+
     const group = {
         groupId: 10,
         name: "Study Group",
@@ -112,7 +117,8 @@ describe("GroupManagement", () =>
                 {
                     method: "PATCH",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         userId: 1,
@@ -173,7 +179,8 @@ describe("GroupManagement", () =>
                 {
                     method: "PATCH",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         userId: 1,

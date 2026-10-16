@@ -3,7 +3,8 @@ const groupService = require("../services/groupService");
 // create an accountability group and return its ID and invitation code
 async function createGroup(req, res)
 {
-    const { name, description, maxMembers, creatorId } = req.body;
+    const { name, description, maxMembers } = req.body;
+    const creatorId = req.user.userId;
 
     const result = await groupService.createGroup(name, description, maxMembers, creatorId);
 
@@ -24,7 +25,8 @@ async function createGroup(req, res)
 // join an accountability group using a valid invitation code and user ID
 async function joinGroup(req, res)
 {
-    const { invitationCode, userId } = req.body;
+    const { invitationCode } = req.body;
+    const userId = req.user.userId;
 
     const result = await groupService.joinGroup(invitationCode, userId);
 
@@ -85,7 +87,7 @@ async function getMembers(req, res)
 async function leaveGroup(req, res)
 {
     const groupId = Number(req.params.groupId);
-    const { userId } = req.body;
+    const userId = req.user.userId;
     const result = await groupService.leaveGroup(groupId, userId);
 
     if (!result.success)
@@ -106,7 +108,7 @@ async function removeMember(req, res)
 {
     const groupId = Number(req.params.groupId);
     const memberUserId = Number(req.params.memberUserId);
-    const { userId } = req.body;
+    const userId = req.user.userId;
     const result = await groupService.removeMember(groupId, userId, memberUserId);
 
     if (!result)
@@ -122,7 +124,8 @@ async function updateRole(req, res)
 {
     const groupId = Number(req.params.groupId);
     const memberUserId = Number(req.params.memberUserId);
-    const { userId, role } = req.body;
+    const { role } = req.body;
+    const userId = req.user.userId;
     const result = await groupService.updateRole(groupId, userId, memberUserId, role);
 
     if (!result)
@@ -138,7 +141,8 @@ async function updateGroup(req, res)
 {
     // convert the URL parameter from a string to a number
     const groupId = Number(req.params.groupId);
-    const { userId, ...changes } = req.body;
+    const { userId: _ignoredUserId, ...changes } = req.body;
+    const userId = req.user.userId;
 
     const result = await groupService.updateGroup(groupId, userId, changes);
 
@@ -157,7 +161,7 @@ async function deleteGroup(req, res)
 {
     // convert the URL parameter from a string to a number
     const groupId = Number(req.params.groupId);
-    const { userId } = req.body;
+    const userId = req.user.userId;
 
     const result = await groupService.deleteGroup(groupId, userId);
 
@@ -174,7 +178,7 @@ async function deleteGroup(req, res)
 // retrieve and return all accountability groups that a user belongs to
 async function getUserGroups(req, res)
 {
-    const userId = Number(req.params.userId);
+    const userId = req.user.userId;
 
     if (!Number.isInteger(userId) || userId <= 0)
     {

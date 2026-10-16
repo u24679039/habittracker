@@ -4,6 +4,11 @@ import Groups from "../components/Groups";
 
 describe("Groups", () =>
 {
+    beforeEach(() =>
+    {
+        localStorage.setItem("token", "test-jwt-token");
+    });
+
     const group = {
         groupId: 10,
         name: "Study Group",
@@ -150,7 +155,8 @@ describe("Groups", () =>
                 {
                     method: "DELETE",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         userId: 2

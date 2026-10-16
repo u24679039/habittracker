@@ -40,7 +40,10 @@ function JoinGroup({ currentUserId, onSuccess })
         {
             const response = await fetch("http://localhost:3000/groups/join", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                },
                 body: JSON.stringify(joinData)
             });
 
