@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
-function App() {
+function App({ onAuthenticated, onLogout }) {
   const [page, setPage] = useState("login");
 
   const [loginData, setLoginData] = useState({
@@ -25,6 +25,12 @@ function App() {
   const [flaggedGroups, setFlaggedGroups] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Restore an existing session after refreshing the shared application.
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token");
+    if (savedToken) loadProfile(savedToken);
+  }, []);
 
   function handleLoginChange(event) {
     setLoginData({
@@ -150,7 +156,7 @@ function App() {
   // LOAD PROFILE
   // ====================
 
-  async function loadProfile(token) {
+  async function loadProfile(token, notifyParent = true) {
     try {
       const response = await fetch("/api/profile", {
         method: "GET",
@@ -169,6 +175,14 @@ function App() {
         );
 
         setPage("login");
+        onLogout?.();
+        return;
+      }
+
+      const authenticatedId = data.user?.userId ?? data.user?.id;
+      if (authenticatedId == null) {
+        setMessage("The server did not provide a user ID.");
+        setPage("login");
         return;
       }
 
@@ -181,6 +195,7 @@ function App() {
 
       setMessage("");
       setPage("profile");
+      if (notifyParent) onAuthenticated?.(data.user);
     } catch (error) {
       setMessage("Could not load your profile.");
     }
@@ -225,7 +240,7 @@ function App() {
         return;
       }
 
-      await loadProfile(token);
+      await loadProfile(token, false);
 
       setMessage("Profile updated successfully.");
     } catch (error) {
@@ -288,6 +303,7 @@ function App() {
       });
 
       setPage("login");
+      onLogout?.();
       setMessage("Account deleted successfully.");
     } catch (error) {
       setMessage("Could not delete your account.");
@@ -318,6 +334,7 @@ function App() {
 
     setMessage("You have been logged out.");
     setPage("login");
+    onLogout?.();
   }
 
   // ====================

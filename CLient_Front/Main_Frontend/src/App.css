@@ -1,0 +1,16 @@
+.app-shell { min-height: 100vh; }
+.site-header { display: flex; align-items: center; flex-wrap: wrap; gap: 1.5rem; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #e5e7eb; }
+.brand { font-size: 1.15rem; font-weight: 750; color: #111827; }
+.main-nav, .header-actions { display: flex; gap: .25rem; align-items: center; flex-wrap: wrap; }
+.main-nav { margin: auto; }
+.nav-link, .header-button { border: 0; background: transparent; border-radius: .4rem; padding: .65rem .8rem; color: #4b5563; font: inherit; cursor: pointer; }
+.nav-link:hover, .header-button:hover { background: #f3f4f6; }
+.nav-link.active, .header-button.active { background: #e5e7eb; color: #111827; font-weight: 650; }
+.nav-link:focus-visible, .header-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.page-content { width: min(1100px, calc(100% - 3rem)); margin: 2.25rem auto; }
+.page-content h1 { margin: 0 0 1.25rem; font-size: 1.7rem; }
+.placeholder { min-height: 260px; display: grid; place-items: center; padding: 2rem; text-align: center; color: #6b7280; background: #fff; border: 1px solid #e5e7eb; border-radius: .7rem; }
+.notification-panel { position: absolute; right: 2rem; top: 5rem; z-index: 10; width: min(340px, calc(100% - 2rem)); padding: 1.2rem; background: white; border: 1px solid #e5e7eb; border-radius: .6rem; box-shadow: 0 12px 32px #00000016; }
+.notification-panel h2 { margin: 0 0 .5rem; font-size: 1rem; }
+.notification-panel p { margin: 0; color: #6b7280; font-size: .9rem; }
+@media (max-width: 700px) { .site-header { padding: 1rem; gap: .75rem; } .main-nav { order: 3; width: 100%; margin: 0; } .header-actions { margin-left: auto; } .notification-panel { top: 8rem; right: 1rem; } }

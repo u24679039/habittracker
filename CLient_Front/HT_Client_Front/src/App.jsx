@@ -336,7 +336,7 @@ async function logSnoozeDay(habit) {
   }
 
   return (
-    <main className="app-shell">
+    <main className="habit-app-shell">
       <h1 className="app-title">My habits</h1>
 
       <section className="habit-list-header" aria-label="Habit controls">
