@@ -1,41 +1,46 @@
 const assert = require("assert");
 const sinon = require("sinon");
-// Mock Prisma before loading the service so no test contacts PostgreSQL.
-jest.mock("../../prisma/prismaClient", () => {
-    const sinon = require("sinon");
-    return {
-        accountabilityGroup: {
-            findUnique: sinon.stub(),
-            create: sinon.stub(),
-            update: sinon.stub(),
-            delete: sinon.stub()
-        },
-        groupMembership: {
-            findUnique: sinon.stub(),
-            count: sinon.stub(),
-            create: sinon.stub(),
-            findMany: sinon.stub(),
-            delete: sinon.stub(),
-            deleteMany: sinon.stub(),
-            update: sinon.stub()
-        },
-        $transaction: sinon.stub()
-    };
-});
 
-const prismaMock = require("../../prisma/prismaClient");
-const findUniqueStub = prismaMock.accountabilityGroup.findUnique;
-const groupCreateStub = prismaMock.accountabilityGroup.create;
-const membershipCreateStub = prismaMock.groupMembership.create;
-const transactionStub = prismaMock.$transaction;
-const membershipFindUniqueStub = prismaMock.groupMembership.findUnique;
-const membershipCountStub = prismaMock.groupMembership.count;
-const groupUpdateStub = prismaMock.accountabilityGroup.update;
-const membershipDeleteManyStub = prismaMock.groupMembership.deleteMany;
-const groupDeleteStub = prismaMock.accountabilityGroup.delete;
-const membershipFindManyStub = prismaMock.groupMembership.findMany;
-const membershipDeleteStub = prismaMock.groupMembership.delete;
-const membershipUpdateStub = prismaMock.groupMembership.update;
+const findUniqueStub = sinon.stub();
+const groupCreateStub = sinon.stub();
+const membershipCreateStub = sinon.stub();
+const transactionStub = sinon.stub();
+const membershipFindUniqueStub = sinon.stub();
+const membershipCountStub = sinon.stub();
+const groupUpdateStub = sinon.stub();
+const membershipDeleteManyStub = sinon.stub();
+const groupDeleteStub = sinon.stub();
+const membershipFindManyStub = sinon.stub();
+const membershipDeleteStub = sinon.stub();
+const membershipUpdateStub = sinon.stub();
+
+// replace the real Prisma client with mocked database operations for isolated unit testing
+const prismaMock =
+{
+    accountabilityGroup:
+    {
+        findUnique: findUniqueStub,
+        create: groupCreateStub
+    },
+
+    groupMembership:
+    {
+        findUnique: membershipFindUniqueStub,
+        count: membershipCountStub,
+        create: membershipCreateStub,
+        findMany: membershipFindManyStub,
+        delete: membershipDeleteStub,
+        update: membershipUpdateStub
+    },
+
+    $transaction: transactionStub
+};
+
+// proxyquire does not work under Jest (Jest uses its own module loader, so the
+// stub is silently ignored and the real database gets used). jest.doMock does the
+// same job. It is not hoisted, so it can use prismaMock, which is defined above.
+jest.resetModules();
+jest.doMock("../../prisma/client", () => prismaMock);
 
 const {
     generateInviteCode,
@@ -54,6 +59,7 @@ const {
     deleteGroup,
     getUserGroups
 } = require("../../Micro_Groups/services/groupService");
+
 
 describe("generateInviteCode", function()
 {
@@ -185,7 +191,7 @@ describe("createGroup", function()
         findUniqueStub.resolves(null);
         groupCreateStub.resolves({
             groupId: 1,
-             inviteCode: "AB7KQ3"
+            inviteCode: "AB7KQ3"
         });
         membershipCreateStub.resolves({});
 
@@ -212,7 +218,7 @@ describe("createGroup", function()
 
         assert.deepStrictEqual(result, {
             groupId: 1,
-            invitationCode: "AB7KQ3"
+            inviteCode: "AB7KQ3"
         });
         assert.strictEqual(groupCreateStub.calledOnce, true);
         assert.strictEqual(membershipCreateStub.calledOnce, true);
@@ -500,12 +506,12 @@ describe("getMembers", function()
                 userId: 10,
                 groupId: 1,
                 role: "OWNER",
-                name: "User Ten"
+                name: "User 10"
             }
         ];
 
         findUniqueStub.resolves({ groupId: 1 });
-        membershipFindManyStub.resolves(memberships.map(member => ({ ...member, user: { name: "User Ten" } })));
+        membershipFindManyStub.resolves(memberships);
 
         assert.deepStrictEqual(await getMembers(1), expectedMemberships);
         assert.strictEqual(membershipFindManyStub.calledOnce, true);
@@ -1038,7 +1044,7 @@ describe("deleteGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            createdBy: 10
+            creatorId: 10
         });
 
         groupDeleteStub.rejects(new Error("database error"));

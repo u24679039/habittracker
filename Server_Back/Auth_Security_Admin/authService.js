@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { prisma } = require("../prisma/client");
+const prisma  = require("../prisma/client");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -41,7 +41,7 @@ async function register(name, email, password) {
     data: {
       name: name,
       email: email,
-      password: passwordHash,
+      passwordHash: passwordHash,
       role: "USER"
     }
   });
@@ -49,7 +49,7 @@ async function register(name, email, password) {
   return {
     success: true,
     message: "Registration successful.",
-    userId: user.id
+    userId: user.userId
   };
 }
 
@@ -80,7 +80,7 @@ async function login(email, password) {
 
   const passwordCorrect = await bcrypt.compare(
     password,
-    user.password
+    user.passwordHash
   );
 
   if (!passwordCorrect) {
@@ -92,7 +92,7 @@ async function login(email, password) {
 
   const token = jwt.sign(
     {
-      userId: user.id,
+      userId: user.userId,
       role: user.role
     },
     JWT_SECRET,
@@ -115,14 +115,14 @@ async function login(email, password) {
 async function getProfile(userId) {
   const user = await prisma.user.findUnique({
     where: {
-      id: userId
+      userId: userId
     },
     select: {
-      id: true,
+      userId: true,
       name: true,
       email: true,
       role: true,
-      CreatedAt: true
+      createdAt: true
     }
   });
 
@@ -146,7 +146,7 @@ async function getProfile(userId) {
 async function updateProfile(userId, updates) {
   const user = await prisma.user.findUnique({
     where: {
-      id: userId
+      userId: userId
     }
   });
 
@@ -182,7 +182,7 @@ async function updateProfile(userId, updates) {
 
   await prisma.user.update({
     where: {
-      id: userId
+      userId: userId
     },
     data: dataToUpdate
   });
@@ -200,7 +200,7 @@ async function updateProfile(userId, updates) {
 async function deleteAccount(userId) {
   const user = await prisma.user.findUnique({
     where: {
-      id: userId
+      userId: userId
     }
   });
 
@@ -213,7 +213,7 @@ async function deleteAccount(userId) {
 
   await prisma.user.delete({
     where: {
-      id: userId
+      userId: userId
     }
   });
 
@@ -256,15 +256,14 @@ async function createAdmin(name, email, password) {
     data: {
       name: name,
       email: email,
-      password: passwordHash,
+      passwordHash: passwordHash,
       role: "ADMIN"
     }
   });
-
   return {
     success: true,
     message: "Admin created successfully.",
-    userId: admin.id
+    userId: admin.userId
   };
 }
 

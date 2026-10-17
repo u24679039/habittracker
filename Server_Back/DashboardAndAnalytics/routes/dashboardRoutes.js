@@ -1,6 +1,6 @@
 const express = require('express');
 const dashboard = require('../models/dashboard');
-const prisma = require('../db/prismaClient');
+const prisma = require('../../prisma/client');
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ const router = express.Router();
  * @throws {Error} Throws a 400 error if the user ID is missing or invalid
  */
 function resolveUserId(req) {
-  const userId = Number(req.query.userId || req.headers['x-user-id']);
+  const userId = Number(req.user?.userId ?? req.query.userId ?? req.headers['x-user-id']);
   if (!Number.isInteger(userId) || userId <= 0) {
     const err = new Error('A valid userId is required (temporary until auth integration)');
     err.status = 400;

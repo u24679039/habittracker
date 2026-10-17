@@ -1,34 +1,34 @@
 const assert = require("assert");
 const sinon = require("sinon");
-// Jest intercepts the service import before the controller is loaded.
-// The real Prisma-backed service is not used in these controller unit tests.
-jest.mock("../../Micro_Groups/services/groupService", () => {
-    const sinon = require("sinon");
-    return {
-        createGroup: sinon.stub(),
-        joinGroup: sinon.stub(),
-        getGroup: sinon.stub(),
-        getMembers: sinon.stub(),
-        leaveGroup: sinon.stub(),
-        removeMember: sinon.stub(),
-        updateRole: sinon.stub(),
-        updateGroup: sinon.stub(),
-        deleteGroup: sinon.stub(),
-        getUserGroups: sinon.stub()
-    };
-});
 
-const groupServiceMock = require("../../Micro_Groups/services/groupService");
-const createGroupStub = groupServiceMock.createGroup;
-const joinGroupStub = groupServiceMock.joinGroup;
-const getGroupStub = groupServiceMock.getGroup;
-const updateGroupStub = groupServiceMock.updateGroup;
-const deleteGroupStub = groupServiceMock.deleteGroup;
-const getMembersStub = groupServiceMock.getMembers;
-const leaveGroupStub = groupServiceMock.leaveGroup;
-const removeMemberStub = groupServiceMock.removeMember;
-const updateRoleStub = groupServiceMock.updateRole;
-const getUserGroupsStub = groupServiceMock.getUserGroups;
+const createGroupStub = sinon.stub();
+const joinGroupStub = sinon.stub();
+const getGroupStub = sinon.stub();
+const updateGroupStub = sinon.stub();
+const deleteGroupStub = sinon.stub();
+const getMembersStub = sinon.stub();
+const leaveGroupStub = sinon.stub();
+const removeMemberStub = sinon.stub();
+const updateRoleStub = sinon.stub();
+const getUserGroupsStub = sinon.stub();
+
+const groupServiceMock = {
+    createGroup: createGroupStub,
+    joinGroup: joinGroupStub,
+    getGroup: getGroupStub,
+    getMembers: getMembersStub,
+    leaveGroup: leaveGroupStub,
+    removeMember: removeMemberStub,
+    updateRole: updateRoleStub,
+    updateGroup: updateGroupStub,
+    deleteGroup: deleteGroupStub,
+    getUserGroups: getUserGroupsStub
+};
+
+// proxyquire is ignored under Jest, so mock the service with jest.doMock instead.
+// It must come AFTER groupServiceMock is defined above (it is not hoisted).
+jest.resetModules();
+jest.doMock("../../Micro_Groups/services/groupService", () => groupServiceMock);
 
 const {
     createGroup,
@@ -54,9 +54,9 @@ describe("createGroup", function()
     // test successful group creation
     it("should return 201 and the created group details", async function()
     {
-        createGroupStub.resolves({ groupId: 1, invitationCode: "AB7KQ3" });
+        createGroupStub.resolves({ groupId: 1, inviteCode: "AB7KQ3" });
 
-        const req = { body: { name: "Study Group", description: "Weekly study sessions", maxMembers: 5, creatorId: 10 } , user: { userId: 10 } };
+        const req = { body: { name: "Study Group", description: "Weekly study sessions", maxMembers: 5, creatorId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await createGroup(req, res);
@@ -74,7 +74,7 @@ describe("createGroup", function()
     {
         createGroupStub.resolves(false);
 
-        const req = { body: { name: "Study Group", description: "Weekly study sessions", maxMembers: 5, creatorId: 10 } , user: { userId: 10 } };
+        const req = { body: { name: "Study Group", description: "Weekly study sessions", maxMembers: 5, creatorId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await createGroup(req, res);
@@ -97,7 +97,7 @@ describe("joinGroup", function()
     {
         joinGroupStub.resolves({success: true});
 
-        const req = { body: { invitationCode: "AB7KQ3", userId: 10 } , user: { userId: 10 } };
+        const req = { body: { invitationCode: "AB7KQ3", userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await joinGroup(req, res);
@@ -111,7 +111,7 @@ describe("joinGroup", function()
     {
         joinGroupStub.resolves(false);
 
-        const req = { body: { invitationCode: "AB7KQ3", userId: 10 } , user: { userId: 10 } };
+        const req = { body: { invitationCode: "AB7KQ3", userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await joinGroup(req, res);
@@ -128,7 +128,7 @@ describe("joinGroup", function()
             reason: "ALREADY_MEMBER"
         });
 
-        const req = { body: { invitationCode: "AB7KQ3", userId: 10 } , user: { userId: 10 } };
+        const req = { body: { invitationCode: "AB7KQ3", userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await joinGroup(req, res);
@@ -248,7 +248,7 @@ describe("leaveGroup", function()
     it("should return 200 when a member leaves successfully", async function()
     {
         leaveGroupStub.resolves({ success: true });
-        const req = { params: { groupId: "1" }, body: { userId: 20 } , user: { userId: 20 } };
+        const req = { params: { groupId: "1" }, body: { userId: 20 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await leaveGroup(req, res);
@@ -260,7 +260,7 @@ describe("leaveGroup", function()
     it("should return a clear failure when an owner tries to leave", async function()
     {
         leaveGroupStub.resolves({ success: false, reason: "OWNER_CANNOT_LEAVE" });
-        const req = { params: { groupId: "1" }, body: { userId: 10 } , user: { userId: 10 } };
+        const req = { params: { groupId: "1" }, body: { userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await leaveGroup(req, res);
@@ -272,7 +272,7 @@ describe("leaveGroup", function()
     it("should return 400 when leaving the group fails", async function()
     {
         leaveGroupStub.resolves({ success: false, reason: "NOT_A_MEMBER" });
-        const req = { params: { groupId: "1" }, body: { userId: 20 } , user: { userId: 20 } };
+        const req = { params: { groupId: "1" }, body: { userId: 20 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await leaveGroup(req, res);
@@ -294,7 +294,7 @@ describe("removeMember", function()
     it("should return 200 when an owner removes a member", async function()
     {
         removeMemberStub.resolves(true);
-        const req = { params: { groupId: "1", memberUserId: "20" }, body: { userId: 10 } , user: { userId: 10 } };
+        const req = { params: { groupId: "1", memberUserId: "20" }, body: { userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await removeMember(req, res);
@@ -306,7 +306,7 @@ describe("removeMember", function()
     it("should return 400 when a non-owner attempts to remove a member", async function()
     {
         removeMemberStub.resolves(false);
-        const req = { params: { groupId: "1", memberUserId: "30" }, body: { userId: 20 } , user: { userId: 20 } };
+        const req = { params: { groupId: "1", memberUserId: "30" }, body: { userId: 20 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await removeMember(req, res);
@@ -317,7 +317,7 @@ describe("removeMember", function()
     it("should return 400 when an owner attempts to remove themselves", async function()
     {
         removeMemberStub.resolves(false);
-        const req = { params: { groupId: "1", memberUserId: "10" }, body: { userId: 10 } , user: { userId: 10 } };
+        const req = { params: { groupId: "1", memberUserId: "10" }, body: { userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await removeMember(req, res);
@@ -340,8 +340,7 @@ describe("updateRole", function()
         updateRoleStub.resolves(true);
         const req = {
             params: { groupId: "1", memberUserId: "20" },
-            body: { userId: 10, role: "OWNER" },
-            user: { userId: 10 }
+            body: { userId: 10, role: "OWNER" }
         };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
@@ -356,8 +355,7 @@ describe("updateRole", function()
         updateRoleStub.resolves(false);
         const req = {
             params: { groupId: "1", memberUserId: "30" },
-            body: { userId: 20, role: "OWNER" },
-            user: { userId: 20 }
+            body: { userId: 20, role: "OWNER" }
         };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
@@ -371,8 +369,7 @@ describe("updateRole", function()
         updateRoleStub.resolves(false);
         const req = {
             params: { groupId: "1", memberUserId: "10" },
-            body: { userId: 10, role: "MEMBER" },
-            user: { userId: 10 }
+            body: { userId: 10, role: "MEMBER" }
         };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
@@ -395,7 +392,7 @@ describe("updateGroup", function()
     {
         updateGroupStub.resolves({ groupId: 1, name: "Exam Group" });
 
-        const req = { params: { groupId: "1" }, body: { userId: 10, name: "Exam Group" } , user: { userId: 10 } };
+        const req = { params: { groupId: "1" }, body: { userId: 10, name: "Exam Group" } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await updateGroup(req, res);
@@ -409,7 +406,7 @@ describe("updateGroup", function()
     {
         updateGroupStub.resolves(null);
 
-        const req = { params: { groupId: "1" }, body: { userId: 10, name: "Exam Group" } , user: { userId: 10 } };
+        const req = { params: { groupId: "1" }, body: { userId: 10, name: "Exam Group" } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await updateGroup(req, res);
@@ -432,7 +429,7 @@ describe("deleteGroup", function()
     {
         deleteGroupStub.resolves(true);
 
-        const req = { params: { groupId: "1" }, body: { userId: 10 } , user: { userId: 10 } };
+        const req = { params: { groupId: "1" }, body: { userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await deleteGroup(req, res);
@@ -446,7 +443,7 @@ describe("deleteGroup", function()
     {
         deleteGroupStub.resolves(false);
 
-        const req = { params: { groupId: "1" }, body: { userId: 10 } , user: { userId: 10 } };
+        const req = { params: { groupId: "1" }, body: { userId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await deleteGroup(req, res);
@@ -486,7 +483,7 @@ describe("getUserGroups", function()
 
         getUserGroupsStub.resolves(groups);
 
-        const req = { params: { userId: "10" }, user: { userId: 10 } };
+        const req = { params: { userId: "10" } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await getUserGroups(req, res);
@@ -500,7 +497,7 @@ describe("getUserGroups", function()
     {
         getUserGroupsStub.resolves([]);
 
-        const req = { params: { userId: "10" }, user: { userId: 10 } };
+        const req = { params: { userId: "10" } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await getUserGroups(req, res);
@@ -512,7 +509,7 @@ describe("getUserGroups", function()
     // test that an invalid user ID is rejected
     it("should return 400 for an invalid user ID", async function()
     {
-        const req = { params: { userId: "0" }, user: { userId: 0 } };
+        const req = { params: { userId: "0" } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };
 
         await getUserGroups(req, res);

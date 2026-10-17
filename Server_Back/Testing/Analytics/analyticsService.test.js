@@ -26,13 +26,13 @@ describe('AnalyticsService.getConsistencyTrend', () => {
   test('computes a completion percentage per day', async () => {
     const prisma = createMockPrisma();
     prisma.habitLog.findMany.mockResolvedValue([
-      { logDate: '2026-08-01', status: 'COMPLETED' },
-      { logDate: '2026-08-01', status: 'COMPLETED' },
-      { logDate: '2026-08-01', status: 'COMPLETED' },
-      { logDate: '2026-08-02', status: 'COMPLETED' },
-      { logDate: '2026-08-02', status: 'MISSED' },
-      { logDate: '2026-08-02', status: 'MISSED' },
-      { logDate: '2026-08-02', status: 'MISSED' },
+      { completedAt : '2026-08-01', status: 'COMPLETED' },
+      { completedAt : '2026-08-01', status: 'COMPLETED' },
+      { completedAt : '2026-08-01', status: 'COMPLETED' },
+      { completedAt : '2026-08-02', status: 'COMPLETED' },
+      { completedAt : '2026-08-02', status: 'MISSED' },
+      { completedAt : '2026-08-02', status: 'MISSED' },
+      { completedAt : '2026-08-02', status: 'MISSED' },
     ]);
     const service = new AnalyticsService(prisma);
     const trend = await service.getConsistencyTrend(1, '2026-08-01', '2026-08-02');
@@ -60,8 +60,8 @@ describe('AnalyticsService.getHabitDensityHeatmap', () => {
   test('builds a date -> count map from completed logs only', async () => {
     const prisma = createMockPrisma();
     prisma.habitLog.findMany.mockResolvedValue([
-      { logDate: '2026-08-04T00:00:00.000Z' },
-      { logDate: '2026-08-04T00:00:00.000Z' },
+      { completedAt : '2026-08-04T00:00:00.000Z' },
+      { completedAt : '2026-08-04T00:00:00.000Z' },
     ]);
     const service = new AnalyticsService(prisma);
     const heatmap = await service.getHabitDensityHeatmap(1, '2026-08');
@@ -80,9 +80,9 @@ describe('AnalyticsService.getPerHabitBreakdown', () => {
 
     const prisma = createMockPrisma();
     prisma.habit.findMany.mockResolvedValue([
-      { name: 'Read', logs: [completedLog, completedLog, ...Array(8).fill(missedLog)] }, // 2/10 = 20%
-      { name: 'Meditate', logs: [...Array(9).fill(completedLog), missedLog] }, // 9/10 = 90%
-      { name: 'Exercise', logs: [] }, // no logs yet
+      { title: 'Read', logs: [completedLog, completedLog, ...Array(8).fill(missedLog)] }, // 2/10 = 20%
+      { title: 'Meditate', logs: [...Array(9).fill(completedLog), missedLog] }, // 9/10 = 90%
+      { title: 'Exercise', logs: [] }, // no logs yet
     ]);
     const service = new AnalyticsService(prisma);
     const breakdown = await service.getPerHabitBreakdown(1);
@@ -101,8 +101,8 @@ describe('AnalyticsService.getSummaryStats', () => {
       .mockResolvedValueOnce(15) // completed (last 30 days)
       .mockResolvedValueOnce(20); // total (last 30 days)
     prisma.habitLog.findMany
-      .mockResolvedValueOnce([{ habitId: 1, logDate: '2026-08-01', status: 'COMPLETED' }]) // full history for longestRunEver
-      .mockResolvedValueOnce([{ habitId: 1, logDate: '2026-08-01', status: 'COMPLETED' }]); // active-habit logs for currentStreak
+      .mockResolvedValueOnce([{ habitId: 1, completedAt : '2026-08-01', status: 'COMPLETED' }]) // full history for longestRunEver
+      .mockResolvedValueOnce([{ habitId: 1, completedAt : '2026-08-01', status: 'COMPLETED' }]); // active-habit logs for currentStreak
 
     const service = new AnalyticsService(prisma);
     const summary = await service.getSummaryStats(1);
@@ -128,9 +128,9 @@ describe('AnalyticsService.getSummaryStats', () => {
 describe('AnalyticsService pure helpers', () => {
   test('groupByHabit groups rows under their habitId key', () => {
     const rows = [
-      { habitId: 1, logDate: '2026-08-01' },
-      { habitId: 2, logDate: '2026-08-01' },
-      { habitId: 1, logDate: '2026-08-02' },
+      { habitId: 1, completedAt : '2026-08-01' },
+      { habitId: 2, completedAt : '2026-08-01' },
+      { habitId: 1, completedAt : '2026-08-02' },
     ];
     const grouped = AnalyticsService.groupByHabit(rows);
     expect(Object.keys(grouped)).toEqual(['1', '2']);
@@ -139,12 +139,12 @@ describe('AnalyticsService pure helpers', () => {
 
   test('longestRunEver finds the longest COMPLETED/REST_DAY run in history', () => {
     const rows = [
-      { habitId: 1, logDate: '2026-08-01', status: 'COMPLETED' },
-      { habitId: 1, logDate: '2026-08-02', status: 'COMPLETED' },
-      { habitId: 1, logDate: '2026-08-03', status: 'MISSED' },
-      { habitId: 1, logDate: '2026-08-04', status: 'COMPLETED' },
-      { habitId: 1, logDate: '2026-08-05', status: 'COMPLETED' },
-      { habitId: 1, logDate: '2026-08-06', status: 'COMPLETED' },
+      { habitId: 1, completedAt : '2026-08-01', status: 'COMPLETED' },
+      { habitId: 1, completedAt : '2026-08-02', status: 'COMPLETED' },
+      { habitId: 1, completedAt : '2026-08-03', status: 'MISSED' },
+      { habitId: 1, completedAt : '2026-08-04', status: 'COMPLETED' },
+      { habitId: 1, completedAt : '2026-08-05', status: 'COMPLETED' },
+      { habitId: 1, completedAt : '2026-08-06', status: 'COMPLETED' },
     ];
     expect(AnalyticsService.longestRunEver(rows)).toBe(3);
   });
@@ -155,8 +155,8 @@ describe('AnalyticsService pure helpers', () => {
 
   test('summariseByDate is used consistently by getConsistencyTrend', () => {
     const points = AnalyticsService.summariseByDate([
-      { logDate: '2026-08-01', status: 'COMPLETED' },
-      { logDate: '2026-08-01', status: 'MISSED' },
+      { completedAt : '2026-08-01', status: 'COMPLETED' },
+      { completedAt : '2026-08-01', status: 'MISSED' },
     ]);
     expect(points).toEqual([{ date: '2026-08-01', completionRate: 50 }]);
   });

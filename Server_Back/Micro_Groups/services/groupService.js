@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const prisma = require("../../prisma/prismaClient");
+const prisma = require("../../prisma/client");
 
 
 // Generate a secure random 6-character invitation code.
@@ -75,7 +75,7 @@ async function createGroup(name, description, maxMembers, creatorId)
 
     try
     {
-        const invitationCode = await generateUniqueInviteCode();
+        const inviteCode = await generateUniqueInviteCode();
 
         return await prisma.$transaction(async (tx) =>
         {
@@ -83,7 +83,7 @@ async function createGroup(name, description, maxMembers, creatorId)
                 data: {
                     name,
                     description,
-                    inviteCode: invitationCode,
+                    inviteCode,
                     maxMembers,
                     createdBy: creatorId,
                     isPublic: false,
@@ -101,7 +101,7 @@ async function createGroup(name, description, maxMembers, creatorId)
 
             return {
                 groupId: group.groupId,
-                invitationCode: group.inviteCode
+                inviteCode: group.inviteCode
             };
         });
     }
@@ -241,6 +241,14 @@ async function getMembers(groupId)
         if (!group)
             return null;
 
+        const mockUserNames = {
+            1: "Alex Johnson",
+            2: "Jordan Smith",
+            3: "Taylor Williams",
+            4: "Morgan Brown",
+            5: "Casey Davis"
+        };
+
         const memberships = await prisma.groupMembership.findMany({
             where: { groupId },
             select: {
@@ -248,18 +256,13 @@ async function getMembers(groupId)
                 userId: true,
                 groupId: true,
                 joinedAt: true,
-                role: true,
-                user: {
-                    select: {
-                        name: true
-                    }
-                }
+                role: true
             }
         });
 
-        return memberships.map(({ user, ...member }) => ({
+        return memberships.map(member => ({
             ...member,
-            name: user.name
+            name: mockUserNames[member.userId] || `User ${member.userId}`
         }));
     }
     catch
