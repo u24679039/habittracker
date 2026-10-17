@@ -7,7 +7,7 @@ const Habit_Log = require('./Habit_Log');
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
-
+const express = require('express');
 const router = express.Router();
 const { prisma } = require('../prisma/client'); // pulls from client.js
 

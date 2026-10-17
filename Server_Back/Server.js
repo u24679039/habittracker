@@ -29,10 +29,10 @@ const { authenticateToken } = require('./Auth_Security_Admin/authMiddleware');
  
 const authRouter = require('./Auth_Security_Admin/authRoutes');
 const habitRouter = require('./HabitTracking/habitRoutes'); // also registers the midnight cron job
-const groupRouter = require('./routes/groupRoutes');
+const groupRouter = require('./Micro_Groups/routes/groupRoutes');
 const dashboardRouter = require('./DashboardAndAnalytics/routes/dashboardRoutes');
 const analyticsRouter = require('./DashboardAndAnalytics/routes/analyticsRoutes');
-const notificationRouter = require('./notifications/notificationRoutes');
+const notificationRouter = require('./Notifications/notificationsRoutes');
  
 const app = express();
 app.use(cors());

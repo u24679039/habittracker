@@ -11,7 +11,7 @@
 const express = require('express');
 const AnalyticsService = require('../services/analyticsService');
 const ExportService = require('../services/exportService');
-const prisma = require('../prisma/prismaClient');
+const prisma = require('../../prisma/client');
 
 const router = express.Router();
 const analytics = new AnalyticsService(prisma);

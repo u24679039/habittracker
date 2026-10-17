@@ -1,6 +1,6 @@
 const express = require('express');
 const dashboard = require('../models/dashboard');
-const prisma = require('../prisma/prismaClient');
+const prisma = require('../../prisma/client');
 
 const router = express.Router();
 
