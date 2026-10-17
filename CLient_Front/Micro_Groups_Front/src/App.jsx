@@ -8,13 +8,8 @@ import GroupManagement from "./components/GroupManagement";
 import "./App.css";
 
 
-function App()
+function App({ currentUserId, onViewActivity })
 {
-    // Temporary user selection for demonstration.
-    // Example: http://localhost:5173/?user=1
-    const currentUserId =
-        Number(new URLSearchParams(window.location.search).get("user")) || 1;
-
     const [currentView, setCurrentView] = useState("groups");
     const [selectedGroupId, setSelectedGroupId] = useState(null);
 
@@ -34,24 +29,7 @@ function App()
 
 
     return (
-        <div className="app">
-
-            <header className="app-header">
-                <h1>HabitTrack</h1>
-
-                <button
-                    type="button"
-                    className={
-                        currentView === "groups"
-                            ? "navigation-button active"
-                            : "navigation-button"
-                    }
-                    onClick={openGroups}
-                >
-                    Groups
-                </button>
-            </header>
-
+        <div className="micro-groups-app">
 
             {currentView === "groups" && (
                 <Groups
@@ -63,6 +41,7 @@ function App()
                     onJoinGroup={() =>
                         setCurrentView("joinGroup")
                     }
+                    onViewActivity={onViewActivity}
                 />
             )}
 

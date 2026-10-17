@@ -1,3 +1,5 @@
+// import 
+const { recordHabitCompletion } = require("../Notifications/habitEvents");
 //--------------------------------File Import block------------------------
 //-------------------------------------------------------------------------
 const Habit = require('./Habit');
@@ -325,6 +327,7 @@ router.post('/api/habits/:id/log', async (req, res) => {
             return res.status(400).json({ error: 'This habit has already been logged today.' });
         }
         const savedLog = await completedHabit(habitId, date, value, note);
+        await recordHabitCompletion(habitId);
         res.status(200).json(savedLog);
     } catch (error) {
         res.status(error.statusCode || 500).json({
@@ -413,7 +416,7 @@ router.get('/api/users', async (req, res) => {
     const users = await prisma.user.findMany({
         select: {
             userId: true,
-            title: true,
+            name: true,
             email: true }
     });
     res.json(users);

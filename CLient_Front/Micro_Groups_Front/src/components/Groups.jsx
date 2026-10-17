@@ -12,7 +12,8 @@ function Groups({
     currentUserId,
     onManageGroup,
     onCreateGroup,
-    onJoinGroup
+    onJoinGroup,
+    onViewActivity
 })
 {
     const [groups, setGroups] = useState([]);
@@ -40,7 +41,12 @@ function Groups({
         try
         {
             const response = await fetch(
-                `http://localhost:3000/groups/user/${currentUserId}`
+                `/api/groups/user/${currentUserId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
 
             const data = await response.json();
@@ -61,7 +67,12 @@ function Groups({
                     const groupId = membership.group.groupId;
 
                     const response = await fetch(
-                        `http://localhost:3000/groups/${groupId}/members`
+                        `/api/groups/${groupId}/members`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${localStorage.getItem("token")}`
+                            }
+                        }
                     );
 
                     const members = await response.json();
@@ -133,10 +144,13 @@ function Groups({
         try
         {
             const response = await fetch(
-                `http://localhost:3000/groups/${groupId}/leave`,
+                `/api/groups/${groupId}/leave`,
                 {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({ userId: currentUserId })
                 }
             );
@@ -291,7 +305,7 @@ function Groups({
                                             <span className="invite-code">
                                                 Code:{" "}
                                                 <strong>
-                                                    {group.invitationCode}
+                                                    {group.inviteCode}
                                                 </strong>
                                             </span>
 
@@ -300,7 +314,7 @@ function Groups({
                                                 className="small-action-button"
                                                 onClick={() =>
                                                     copyInvitationCode(
-                                                        group.invitationCode
+                                                        group.inviteCode
                                                     )
                                                 }
                                             >
@@ -323,7 +337,18 @@ function Groups({
 
                                                 Copy
                                             </button>
-
+                                            
+                                            <button
+                                                type="button"
+                                                className="small-action-button"
+                                                onClick={() => onViewActivity?.({
+                                                    groupId: group.groupId,
+                                                    groupName: group.name
+                                                })}
+                                            >
+                                                View Activity
+                                            </button>
+                                            
                                             {isOwner && (
                                                 <button
                                                     type="button"

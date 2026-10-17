@@ -6,6 +6,11 @@ describe("JoinGroup", () =>
 {
     beforeEach(() =>
     {
+        localStorage.setItem("token", "test-jwt-token");
+    });
+
+    beforeEach(() =>
+    {
         global.fetch = vi.fn();
     });
 
@@ -39,11 +44,12 @@ describe("JoinGroup", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups/join",
+                "/api/groups/join",
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         invitationCode: "KXGW8M",

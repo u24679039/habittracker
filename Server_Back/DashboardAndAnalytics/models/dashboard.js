@@ -149,7 +149,7 @@ class dashboard {
         }),
       ]);
       // Avoid a divide-by-zero for a brand-new habit with no logs yet.
-      summary[habit.name] = trackable > 0 ? Number(((completed / trackable) * 100).toFixed(1)) : 0;
+      summary[habit.title] = trackable > 0 ? Number(((completed / trackable) * 100).toFixed(1)) : 0;
     }
     return summary;
   }

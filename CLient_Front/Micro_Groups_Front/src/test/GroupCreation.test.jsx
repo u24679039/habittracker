@@ -6,6 +6,11 @@ describe("GroupCreation", () =>
 {
     beforeEach(() =>
     {
+        localStorage.setItem("token", "test-jwt-token");
+    });
+
+    beforeEach(() =>
+    {
         global.fetch = vi.fn();
     });
 
@@ -44,11 +49,12 @@ describe("GroupCreation", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups",
+                "/api/groups",
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         name: "Study Group",

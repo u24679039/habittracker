@@ -1,6 +1,7 @@
 .group-activity-page {
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  max-width: 520px;
+  width: 100%;
+  max-width: none;
 }
 
 .group-activity-page__back {

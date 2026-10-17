@@ -4,6 +4,11 @@ import GroupManagement from "../components/GroupManagement";
 
 describe("GroupManagement", () =>
 {
+    beforeEach(() =>
+    {
+        localStorage.setItem("token", "test-jwt-token");
+    });
+
     const group = {
         groupId: 10,
         name: "Study Group",
@@ -108,11 +113,12 @@ describe("GroupManagement", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups/10",
+                "/api/groups/10",
                 {
                     method: "PATCH",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         userId: 1,
@@ -169,11 +175,12 @@ describe("GroupManagement", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups/10/members/2/role",
+                "/api/groups/10/members/2/role",
                 {
                     method: "PATCH",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer test-jwt-token"
                     },
                     body: JSON.stringify({
                         userId: 1,

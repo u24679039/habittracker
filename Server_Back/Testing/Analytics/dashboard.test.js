@@ -101,7 +101,7 @@ describe('dashboard.calculateStreak (pure helper)', () => {
 describe('dashboard.getCurrentStreaks', () => {
   test('Design-doc Test 52: user with streaks 3 and 5 -> map containing 3 and 5', async () => {
     const prisma = createMockPrisma();
-    prisma.habit.findMany.mockResolvedValue([{ habitId: 1 }, { habitId: 2 }]);
+    prisma.habit.findMany.mockResolvedValue([{ habitId: 1, title: 'Meditate' },{ habitId: 2, title: 'Read' },]);
     prisma.habitLog.findMany
       .mockResolvedValueOnce([{ completedAt : new Date(), status: 'COMPLETED' }])
       .mockResolvedValueOnce([{ completedAt : new Date(), status: 'COMPLETED' }]);
@@ -174,8 +174,8 @@ describe('dashboard.getProgressSummary', () => {
   test('Design-doc Test 55: recorded habit progress -> map of completion %', async () => {
     const prisma = createMockPrisma();
     prisma.habit.findMany.mockResolvedValue([
-      { habitId: 1, name: 'Meditate' },
-      { habitId: 2, name: 'Read' },
+      { habitId: 1, title: 'Meditate' },
+      { habitId: 2, title: 'Read' },
     ]);
     prisma.habitLog.count
       .mockResolvedValueOnce(9) // Meditate: completed

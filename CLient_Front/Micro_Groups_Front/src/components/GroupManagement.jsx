@@ -18,6 +18,8 @@ function GroupManagement({ groupId, currentUserId, onDelete })
     const [errorMessage, setErrorMessage] = useState("");
     const [actionMessage, setActionMessage] = useState("");
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
+    const [memberToRemove, setMemberToRemove] = useState(null);
 
     /***********************************************************************
      * loadGroup
@@ -34,7 +36,12 @@ function GroupManagement({ groupId, currentUserId, onDelete })
         try
         {
             const groupResponse = await fetch(
-                `http://localhost:3000/groups/${groupId}`
+                `/api/groups/${groupId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
             const groupData = await groupResponse.json();
 
@@ -45,7 +52,12 @@ function GroupManagement({ groupId, currentUserId, onDelete })
             }
 
             const membersResponse = await fetch(
-                `http://localhost:3000/groups/${groupId}/members`
+                `/api/groups/${groupId}/members`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    }
+                }
             );
             const membersData = await membersResponse.json();
 
@@ -91,10 +103,13 @@ function GroupManagement({ groupId, currentUserId, onDelete })
         try
         {
             const response = await fetch(
-                `http://localhost:3000/groups/${groupId}`,
+                `/api/groups/${groupId}`,
                 {
                     method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({
                         userId: currentUserId,
                         name: form.get("groupName").trim(),
@@ -147,10 +162,13 @@ function GroupManagement({ groupId, currentUserId, onDelete })
         try
         {
             const response = await fetch(
-                `http://localhost:3000/groups/${groupId}`,
+                `/api/groups/${groupId}`,
                 {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({ userId: currentUserId })
                 }
             );
@@ -185,19 +203,19 @@ function GroupManagement({ groupId, currentUserId, onDelete })
      ***********************************************************************/
     const removeMember = async (memberUserId) =>
     {
-        if (!window.confirm("Are you sure you want to remove this member?"))
-            return;
-
         setActionMessage("");
         setErrorMessage("");
 
         try
         {
             const response = await fetch(
-                `http://localhost:3000/groups/${groupId}/members/${memberUserId}`,
+                `/api/groups/${groupId}/members/${memberUserId}`,
                 {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({ userId: currentUserId })
                 }
             );
@@ -239,10 +257,13 @@ function GroupManagement({ groupId, currentUserId, onDelete })
         try
         {
             const response = await fetch(
-                `http://localhost:3000/groups/${groupId}/members/${memberUserId}/role`,
+                `/api/groups/${groupId}/members/${memberUserId}/role`,
                 {
                     method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: JSON.stringify({
                         userId: currentUserId,
                         role
@@ -348,7 +369,7 @@ function GroupManagement({ groupId, currentUserId, onDelete })
 
                     <div className="group-detail">
                         <span className="detail-label">Invitation Code</span>
-                        <span>{group.invitationCode}</span>
+                        <span>{group.inviteCode}</span>
                     </div>
                 </div>
 
@@ -359,7 +380,10 @@ function GroupManagement({ groupId, currentUserId, onDelete })
                         {members.map((member) => (
                             <div className="member-card" key={member.userId}>
                                 <div className="member-information">
-                                    <strong>{member.name}</strong>
+                                    <strong>{Number(member.userId) === Number(currentUserId)
+                                    ? "You"
+                                    : member.name}
+                                    </strong>
                                     <span className={
                                         member.role === "OWNER"
                                             ? "member-role owner-role"
@@ -389,7 +413,10 @@ function GroupManagement({ groupId, currentUserId, onDelete })
                                         <button
                                             type="button"
                                             className="remove-member-button"
-                                            onClick={() => removeMember(member.userId)}
+                                            onClick={() => {
+                                                setMemberToRemove(member.userId);
+                                                setShowRemoveConfirmation(true);
+                                            }}
                                         >
                                             Remove
                                         </button>
@@ -504,6 +531,41 @@ function GroupManagement({ groupId, currentUserId, onDelete })
                                 </button>
                             </div>
                         </form>
+                    </div>
+                )}
+
+                {showRemoveConfirmation && (
+                    <div className="delete-confirmation-overlay">
+                        <div className="delete-confirmation-modal">
+                            <h2>Remove Member</h2>
+                            <p>Are you sure you want to remove this member?</p>
+
+                            <div className="delete-confirmation-actions">
+                                <button
+                                    type="button"
+                                    className="cancel-delete-button"
+                                    onClick={() => {
+                                        setShowRemoveConfirmation(false);
+                                        setMemberToRemove(null);
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="confirm-delete-button"
+                                    onClick={() => {
+                                        const userId = memberToRemove;
+                                        setShowRemoveConfirmation(false);
+                                        setMemberToRemove(null);
+                                        removeMember(userId);
+                                    }}
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
