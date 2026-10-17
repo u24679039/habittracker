@@ -1,5 +1,5 @@
 /** Minimal Prisma-Client-shaped test double: only the models/methods this class touches. */
-const dashboard = require('../../../backend/src/models/dashboard');
+const dashboard = require('../../DashboardAndAnalytics/models/dashboard');
 
 /** Minimal Prisma-Client-shaped test double: only the models/methods this class touches. */
 function createMockPrisma() {
@@ -36,15 +36,15 @@ describe('dashboard.calculateStreak (pure helper)', () => {
 
   test('Design-doc Test 21: 3 consecutive completed logs -> streak of 3', () => {
     const logs = [
-      { logDate: daysAgo(0), status: 'COMPLETED' },
-      { logDate: daysAgo(1), status: 'COMPLETED' },
-      { logDate: daysAgo(2), status: 'COMPLETED' },
+      { completedAt : daysAgo(0), status: 'COMPLETED' },
+      { completedAt : daysAgo(1), status: 'COMPLETED' },
+      { completedAt : daysAgo(2), status: 'COMPLETED' },
     ];
     expect(dashboard.calculateStreak(logs)).toBe(3);
   });
 
   test('Design-doc Test 22: no consecutive completed logs -> streak of 0', () => {
-    const logs = [{ logDate: daysAgo(5), status: 'COMPLETED' }];
+    const logs = [{ completedAt : daysAgo(5), status: 'COMPLETED' }];
     // today has no log at all -> the very first check fails, streak is 0
     expect(dashboard.calculateStreak(logs)).toBe(0);
   });
@@ -56,26 +56,26 @@ describe('dashboard.calculateStreak (pure helper)', () => {
 
   test('a rest day preserves the streak instead of breaking it', () => {
     const logs = [
-      { logDate: daysAgo(0), status: 'COMPLETED' },
-      { logDate: daysAgo(1), status: 'REST_DAY' },
-      { logDate: daysAgo(2), status: 'COMPLETED' },
+      { completedAt : daysAgo(0), status: 'COMPLETED' },
+      { completedAt : daysAgo(1), status: 'REST_DAY' },
+      { completedAt : daysAgo(2), status: 'COMPLETED' },
     ];
     expect(dashboard.calculateStreak(logs)).toBe(2);
   });
 
   test('a MISSED day breaks the streak', () => {
     const logs = [
-      { logDate: daysAgo(0), status: 'COMPLETED' },
-      { logDate: daysAgo(1), status: 'MISSED' },
-      { logDate: daysAgo(2), status: 'COMPLETED' },
+      { completedAt : daysAgo(0), status: 'COMPLETED' },
+      { completedAt : daysAgo(1), status: 'MISSED' },
+      { completedAt : daysAgo(2), status: 'COMPLETED' },
     ];
     expect(dashboard.calculateStreak(logs)).toBe(1);
   });
 
   test('a gap in dates (no log for a day) breaks the streak', () => {
     const logs = [
-      { logDate: daysAgo(0), status: 'COMPLETED' },
-      { logDate: daysAgo(2), status: 'COMPLETED' }, // missing daysAgo(1) entirely
+      { completedAt : daysAgo(0), status: 'COMPLETED' },
+      { completedAt : daysAgo(2), status: 'COMPLETED' }, // missing daysAgo(1) entirely
     ];
     expect(dashboard.calculateStreak(logs)).toBe(1);
   });
@@ -93,7 +93,7 @@ describe('dashboard.calculateStreak (pure helper)', () => {
     // this is the exact scenario that returned 0 instead of the correct
     // streak before calculateStreak was fixed to compare in UTC.
     const todayUtcMidnight = dashboard.toUtcMidnight(new Date()).toISOString();
-    const logs = [{ logDate: todayUtcMidnight, status: 'COMPLETED' }];
+    const logs = [{ completedAt : todayUtcMidnight, status: 'COMPLETED' }];
     expect(dashboard.calculateStreak(logs)).toBe(1);
   });
 });
@@ -103,8 +103,8 @@ describe('dashboard.getCurrentStreaks', () => {
     const prisma = createMockPrisma();
     prisma.habit.findMany.mockResolvedValue([{ habitId: 1 }, { habitId: 2 }]);
     prisma.habitLog.findMany
-      .mockResolvedValueOnce([{ logDate: new Date(), status: 'COMPLETED' }])
-      .mockResolvedValueOnce([{ logDate: new Date(), status: 'COMPLETED' }]);
+      .mockResolvedValueOnce([{ completedAt : new Date(), status: 'COMPLETED' }])
+      .mockResolvedValueOnce([{ completedAt : new Date(), status: 'COMPLETED' }]);
 
     const d = new dashboard(1, prisma);
 
@@ -131,14 +131,14 @@ describe('dashboard.getCurrentStreaks', () => {
     const d = new dashboard(7, prisma);
     await d.getCurrentStreaks();
     expect(prisma.habit.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 7, status: 'ACTIVE' } })
+      expect.objectContaining({ where: { userId: 7, Activated: true } })
     );
   });
 });
 
 describe('dashboard.getHabitHistory', () => {
   test('Design-doc Test 53: logs exist for range -> matching list', async () => {
-    const fakeLogs = [{ logId: 1, habitId: 1, logDate: '2026-08-05', value: 30, status: 'COMPLETED' }];
+    const fakeLogs = [{ logId: 1, habitId: 1, completedAt : '2026-08-05', value: 30, status: 'COMPLETED' }];
     const prisma = createMockPrisma();
     prisma.habitLog.findMany.mockResolvedValue(fakeLogs);
     const d = new dashboard(1, prisma);

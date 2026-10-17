@@ -38,7 +38,7 @@ class dashboard {
 
   async getCurrentStreaks() {
     const habits = await this.prisma.habit.findMany({
-      where: { userId: this.userId, status: 'ACTIVE' }, // look for active habits only
+      where: { userId: this.userId, Activated: true }, // look for active habits only
       select: { habitId: true }, // don't fetch unnecessary fields 
     });
 
@@ -46,8 +46,8 @@ class dashboard {
     for (const habit of habits) {
       const logs = await this.prisma.habitLog.findMany({
         where: { habitId: habit.habitId },
-        orderBy: { logDate: 'desc' }, // sort from newest to oldest 
-        select: { logDate: true, status: true }, // fetch only fields relevant to streak calcs (short for calculations)
+        orderBy: { completedAt: 'desc' }, // sort from newest to oldest 
+        select: { completedAt: true, status: true }, // fetch only fields relevant to streak calcs (short for calculations)
       });
       streaks[habit.habitId] = dashboard.calculateStreak(logs);
     }
@@ -57,7 +57,7 @@ class dashboard {
   /**
    * Pure helper (no I/O) so it can be unit-tested in isolation and reused
    * by the Habit class if needed later. Logs must be sorted newest-first
-   * and shaped like Prisma's HabitLog select: { logDate, status }.
+   * and shaped like Prisma's HabitLog select: { completedAt, status }.
    *
    * Rules:
    *  - COMPLETED on the expected day -> streak continues, move to previous day
@@ -73,9 +73,9 @@ class dashboard {
     let expectedDate = dashboard.toUtcMidnight(new Date());
 
     for (const log of logsNewestFirst) {
-      const logDate = dashboard.toUtcMidnight(new Date(log.logDate));
+      const completedAt = dashboard.toUtcMidnight(new Date(log.completedAt));
 
-      if (logDate.getTime() !== expectedDate.getTime()) {
+      if (completedAt.getTime() !== expectedDate.getTime()) {
         // A gap exists between the expected day and this log's date.
         break;
       }
@@ -109,9 +109,9 @@ class dashboard {
     return this.prisma.habitLog.findMany({
       where: {
         habit: { userId: this.userId }, // only logs for habits belonging to this user
-        logDate: { gte: new Date(from), lte: new Date(to) }, // filters logs falling between the from and to boundaries (inclusive)
+        completedAt: { gte: new Date(from), lte: new Date(to) }, // filters logs falling between the from and to boundaries (inclusive)
       },
-      orderBy: { logDate: 'desc' },
+      orderBy: { completedAt: 'desc' },
     });
   }
 
@@ -124,8 +124,8 @@ class dashboard {
 
   async getProgressSummary() {
     const habits = await this.prisma.habit.findMany({
-      where: { userId: this.userId, status: 'ACTIVE' },
-      select: { habitId: true, name: true },
+      where: { userId: this.userId, Activated: true },
+      select: { habitId: true, title: true },
     });
 
     const thirtyDaysAgo = new Date();
@@ -138,13 +138,13 @@ class dashboard {
       // control flow easy to reason about (and to test).
       const [completed, trackable] = await Promise.all([ // simultaneously run two independent database count queries
         this.prisma.habitLog.count({
-          where: { habitId: habit.habitId, status: 'COMPLETED', logDate: { gte: thirtyDaysAgo } },
+          where: { habitId: habit.habitId, status: 'COMPLETED', completedAt: { gte: thirtyDaysAgo } },
         }),
         this.prisma.habitLog.count({
           where: {
             habitId: habit.habitId,
             status: { in: ['COMPLETED', 'MISSED'] },
-            logDate: { gte: thirtyDaysAgo },
+            completedAt: { gte: thirtyDaysAgo },
           },
         }),
       ]);

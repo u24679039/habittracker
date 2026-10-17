@@ -1,6 +1,5 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const proxyquire = require("proxyquire").noCallThru();
 
 const findUniqueStub = sinon.stub();
 const groupCreateStub = sinon.stub();
@@ -37,6 +36,12 @@ const prismaMock =
     $transaction: transactionStub
 };
 
+// proxyquire does not work under Jest (Jest uses its own module loader, so the
+// stub is silently ignored and the real database gets used). jest.doMock does the
+// same job. It is not hoisted, so it can use prismaMock, which is defined above.
+jest.resetModules();
+jest.doMock("../../prisma/client", () => prismaMock);
+
 const {
     generateInviteCode,
     generateUniqueInviteCode,
@@ -53,10 +58,7 @@ const {
     updateGroup,
     deleteGroup,
     getUserGroups
-} = proxyquire("../services/groupService",
-{
-    "../prismaClient": prismaMock
-});
+} = require("../../Micro_Groups/services/groupService");
 
 
 describe("generateInviteCode", function()
@@ -189,7 +191,7 @@ describe("createGroup", function()
         findUniqueStub.resolves(null);
         groupCreateStub.resolves({
             groupId: 1,
-            invitationCode: "AB7KQ3"
+            inviteCode: "AB7KQ3"
         });
         membershipCreateStub.resolves({});
 
@@ -216,7 +218,7 @@ describe("createGroup", function()
 
         assert.deepStrictEqual(result, {
             groupId: 1,
-            invitationCode: "AB7KQ3"
+            inviteCode: "AB7KQ3"
         });
         assert.strictEqual(groupCreateStub.calledOnce, true);
         assert.strictEqual(membershipCreateStub.calledOnce, true);
@@ -861,7 +863,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         membershipFindUniqueStub.resolves({
@@ -903,7 +905,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         const result = await updateGroup(
@@ -921,7 +923,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         membershipCountStub.resolves(4);
@@ -941,7 +943,7 @@ describe("updateGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         groupUpdateStub.rejects(new Error("database error"));
@@ -993,7 +995,7 @@ describe("deleteGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         membershipFindUniqueStub.resolves({
@@ -1015,7 +1017,7 @@ describe("deleteGroup", function()
     {
         findUniqueStub.resolves({
             groupId: 1,
-            creatorId: 10
+            createdBy: 10
         });
 
         const result = await deleteGroup(1, 20);

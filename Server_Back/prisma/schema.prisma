@@ -99,6 +99,7 @@ model Habit {
   // request, so it's worth having an index here rather than making
   // Postgres scan the whole table once it has real data in it.
   @@index([userId])
+  @@map("habits")
 }
 
 // analytics and logs
@@ -127,6 +128,7 @@ model HabitLog {
   // amount of data in here.
   @@index([habitId])
   @@index([userId])
+  @@map("habit_logs")
 }
 
 // One thing worth flagging: the defaults and indexes added above are

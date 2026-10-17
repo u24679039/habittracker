@@ -16,10 +16,10 @@
  */
 const request = require('supertest');
 
-jest.mock('../src/db/prismaClient', () => ({
+jest.mock('../../prisma/client', () => ({
   habit: {
     findMany: jest.fn().mockResolvedValue([
-      { habitId: 1, name: 'Meditate', logs: [{ status: 'COMPLETED' }, { status: 'MISSED' }] },
+      { habitId: 1, title: 'Meditate', logs: [{ status: 'COMPLETED' }, { status: 'MISSED' }] },
     ]),
   },
   habitLog: {
@@ -33,13 +33,20 @@ jest.mock('../src/db/prismaClient', () => ({
 // Required only after the mock above is registered, so every route that
 // touches `require('../db/prismaClient')` gets the mock instead of a real
 // (ungenerated) Prisma Client.
-const app = require('../../DashboardAndAnalytics/app');
+const express = require('express');
+const router = require('../../DashboardAndAnalytics/routes/analyticsRoutes');
+
+const app = express();
+app.use(express.json());
+app.use('/api/analytics', router);
+app.use((err, req, res, next) =>
+  res.status(err.status || 500).json({ message: err.message }));
 
 describe('GET /api/analytics/export.csv', () => {
   test('returns a 400 with a clear error when userId is missing', async () => {
     const response = await request(app).get('/api/analytics/export.csv');
     expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/userId/i);
+    expect(response.body.message).toMatch(/userId/i);
   });
 
   test('returns a downloadable CSV with the correct headers and content', async () => {
@@ -58,7 +65,7 @@ describe('GET /api/analytics/export.pdf', () => {
   test('returns a 400 with a clear error when userId is missing', async () => {
     const response = await request(app).get('/api/analytics/export.pdf');
     expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/userId/i);
+    expect(response.body.message).toMatch(/userId/i);
   });
 
   test('returns a downloadable PDF with the correct headers and a valid PDF body', async () => {

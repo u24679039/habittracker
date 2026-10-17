@@ -11,7 +11,7 @@
 const express = require('express');
 const AnalyticsService = require('../services/analyticsService');
 const ExportService = require('../services/exportService');
-const prisma = require('../db/prismaClient');
+const prisma = require('../../prisma/client');
 
 const router = express.Router();
 const analytics = new AnalyticsService(prisma);
@@ -26,7 +26,7 @@ const analytics = new AnalyticsService(prisma);
  * if userId is missing or not a valid positive integer.
  */
 function resolveUserId(req) {
-  const userId = Number(req.query.userId || req.headers['x-user-id']);
+  const userId = Number(req.user?.userId ?? req.query.userId ?? req.headers['x-user-id']);
   if (!Number.isInteger(userId) || userId <= 0) {
     const err = new Error('A valid userId is required (temporary until auth integration)');
     err.status = 400;
