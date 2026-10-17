@@ -2,14 +2,14 @@ const {
   createAdmin,
   login,
   deleteAccount
-} = require("./authService");
+} = require("../../Auth_Security_Admin/authService");
 
 const {
   authenticateToken,
   requireAdmin
-} = require("./authMiddleware");
+} = require("../../Auth_Security_Admin/authMiddleware");
 
-const { prisma } = require("../prisma/client");
+const { prisma } = require("../../prisma/client");
 
 async function runTests() {
   console.log("========================================");
@@ -43,10 +43,10 @@ async function runTests() {
     // Confirm the role directly from PostgreSQL.
     const adminUser = await prisma.user.findUnique({
       where: {
-        id: adminId
+        userId: adminId
       },
       select: {
-        id: true,
+        userId: true,
         name: true,
         email: true,
         role: true

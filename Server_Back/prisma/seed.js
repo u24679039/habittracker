@@ -1,28 +1,13 @@
 /**
- * Combined seed script for local demo data.
+ * Combined seed script for local demo data and admin creation.
  *
  * Run with: npx prisma db seed
  * (or directly: node prisma/seed.js)
- *
- * Part 1 - Demo team + group (Dashboard / Accountability)
- *  - Demo Student (userId=1 in a fresh database): 4 habits with varied
- *    completion patterns, ~40 days of logs each.
- *  - Alex Rivera and Jordan Kim with their own habits/logs.
- *  - One shared group ("Alpha Squad") with 8 activity feed events.
- *
- * Part 2 - Habit Tracking test data
- *  - "Test User" (test@example.com) with 4 habits built via the Habit class
- *    (Morning Run, Read book, Meditation, Drink Water) plus a little
- *    back-filled history.
- *
- * Uses a fixed-seed PRNG (not Math.random) so re-running produces the
- * *same* demo data every time.
- *
- * Safe to re-run: deletes and recreates all demo/test users and the demo
- * group first, then re-syncs id sequences so Demo Student stays userId=1.
  */
-const { prisma } = require('./client');
+require("dotenv").config();
+const  prisma  = require('./client');
 const Habit = require('../HabitTracking/Habit');
+const { createAdmin } = require("../Auth_Security_Admin/authService"); // Adjust relative path if authService is elsewhere
 
 const DEMO_EMAILS = ['demo@habitforge.test', 'alex@habitforge.test', 'jordan@habitforge.test'];
 const TEST_USER_EMAIL = 'test@example.com';
@@ -32,7 +17,6 @@ const DEMO_INVITE_CODE = 'DEMO-1234';
 /* Shared helpers                                                      */
 /* ------------------------------------------------------------------ */
 
-/** Deterministic PRNG (mulberry32) so demo data is reproducible across re-seeds. */
 function mulberry32(seed) {
   return function () {
     seed |= 0;
@@ -44,12 +28,6 @@ function mulberry32(seed) {
 }
 const rng = mulberry32(42);
 
-/**
- * Resets a table's auto-increment sequence to match what's actually left
- * in it (max id + 1, or 1 if empty). Keeps "Demo Student" at userId=1 on
- * every re-seed, so the frontend's hardcoded DEMO_USER_ID never drifts,
- * while staying safe if other rows exist.
- */
 async function resyncSequence(table, column) {
   await prisma.$executeRawUnsafe(`
     SELECT setval(
@@ -64,19 +42,13 @@ async function resyncSequence(table, column) {
 /* Part 1: Demo team + group                                           */
 /* ------------------------------------------------------------------ */
 
-/**
- * Builds a `days`-long array of statuses, index 0 = today, oldest last.
- * The most recent `currentStreak` days are COMPLETED, a MISSED follows so
- * the streak visibly ends there, and the rest is filled randomly around
- * `completionRate`.
- */
 function buildHistory({ days, currentStreak, completionRate }) {
   const statuses = [];
   for (let i = 0; i < days; i += 1) {
     if (i < currentStreak) {
       statuses.push('COMPLETED');
     } else if (i === currentStreak) {
-      statuses.push('MISSED'); // guarantees the streak actually ends here
+      statuses.push('MISSED');
     } else {
       const r = rng();
       if (r < completionRate) statuses.push('COMPLETED');
@@ -91,8 +63,8 @@ function buildHistory({ days, currentStreak, completionRate }) {
 async function createHabitWithHistory(userId, def) {
   const habit = await prisma.habit.create({
     data: {
-      userId,
-      name: def.name,
+      userId:userId,
+      title: def.name, // Updated from 'name' to 'title' to match DB schema
       targetValue: def.targetValue,
       targetUnit: def.targetUnit,
       frequency: 'DAILY',
@@ -101,15 +73,15 @@ async function createHabitWithHistory(userId, def) {
 
   const statuses = buildHistory(def);
   for (let i = 0; i < statuses.length; i += 1) {
-    // Anchor to UTC midnight to avoid local timezone drift
     const now = new Date();
     const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
     const status = statuses[i];
 
     await prisma.habitLog.create({
       data: {
+        userId:userId,
         habitId: habit.habitId,
-        logDate: date,
+        completedAt: date,
         value: status === 'COMPLETED' ? def.targetValue : 0,
         status,
       },
@@ -145,14 +117,13 @@ async function seedDemoTeam() {
     ],
   });
 
-  // Demo Student's habits - deliberately varied so charts look real, not flat.
   const demoHabits = await Promise.all([
     createHabitWithHistory(demo.userId, {
       name: 'Sleep 8 hours',
       targetValue: 8,
       targetUnit: 'hours',
       days: 40,
-      currentStreak: 21, // star habit: long, ongoing streak
+      currentStreak: 21,
       completionRate: 0.9,
     }),
     createHabitWithHistory(demo.userId, {
@@ -169,19 +140,18 @@ async function seedDemoTeam() {
       targetUnit: 'pages',
       days: 40,
       currentStreak: 4,
-      completionRate: 0.6, // moderate performer
+      completionRate: 0.6,
     }),
     createHabitWithHistory(demo.userId, {
       name: 'Exercise',
       targetValue: 30,
       targetUnit: 'minutes',
       days: 40,
-      currentStreak: 0, // streak broken as of today - shows the "reset" state
+      currentStreak: 0,
       completionRate: 0.7,
     }),
   ]);
 
-  // Teammates get lighter histories - just enough to populate the group feed.
   const alexHabits = await Promise.all([
     createHabitWithHistory(alex.userId, {
       name: 'Run 5k',
@@ -203,7 +173,6 @@ async function seedDemoTeam() {
     }),
   ]);
 
-  // A spread-out, varied activity feed - different users, types, and ages.
   const hoursAgo = (h) => new Date(Date.now() - h * 60 * 60 * 1000);
   await prisma.activity.createMany({
     data: [
@@ -284,8 +253,6 @@ async function seedDemoTeam() {
 /* ------------------------------------------------------------------ */
 
 async function seedHabitTracking() {
-  // Created AFTER the demo users so Demo Student keeps userId=1.
-  // (The old HT seed hardcoded userId=1, which would collide with Demo Student.)
   const testUser = await prisma.user.create({
     data: {
       email: TEST_USER_EMAIL,
@@ -295,7 +262,6 @@ async function seedHabitTracking() {
   });
   const userId = testUser.userId;
 
-  // Create 4 habits
   const habit1 = new Habit(null, userId, 'Morning Run', 'Run 5km', 5, 'km', 'DAILY', '', true, new Date());
   await habit1.save();
 
@@ -308,7 +274,6 @@ async function seedHabitTracking() {
   const habit4 = new Habit(null, userId, 'Drink Water', 'Drink 2L', 2, 'L', 'DAILY', '', true, new Date());
   await habit4.save();
 
-  // Back-filling a week and a bit of history for the morning run
   const startDate = new Date('2026-08-01T00:00:00Z');
   for (let i = 0; i < 8; i++) {
     const logDate = new Date(startDate);
@@ -321,9 +286,7 @@ async function seedHabitTracking() {
     await habit1.logMissed(missedDate, 0, `Missed day${i + 1}`);
   }
 
-  // 3 completed days in a row for the reading habit
   const h2StartDate = new Date();
-  // Use UTC noon to safely avoid timezone date-shifting
   h2StartDate.setUTCHours(12, 0, 0, 0);
   h2StartDate.setUTCDate(h2StartDate.getUTCDate() - 2);
 
@@ -337,25 +300,66 @@ async function seedHabitTracking() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Part 3: Demo Admin Creation                                         */
+/* ------------------------------------------------------------------ */
+
+async function seedAdmin() {
+  const name = process.env.DEMO_ADMIN_NAME;
+  const email = process.env.DEMO_ADMIN_EMAIL;
+  const password = process.env.DEMO_ADMIN_PASSWORD;
+
+  if (!name || !email || !password) {
+    console.error("Demo admin environment variables are missing.");
+    console.error("Set DEMO_ADMIN_NAME, DEMO_ADMIN_EMAIL and DEMO_ADMIN_PASSWORD in .env.");
+    return;
+  }
+
+  const existingAdmin = await prisma.user.findUnique({
+    where: {
+      email: email
+    },
+    select: {
+      userId: true,
+      email: true,
+      role: true
+    }
+  });
+
+  if (existingAdmin) {
+    console.log("Demo admin already exists.");
+    console.log("Email:", existingAdmin.email);
+    console.log("Role:", existingAdmin.role);
+    return;
+  }
+
+  const result = await createAdmin(name, email, password);
+
+  if (result.success) {
+    console.log("Demo admin created successfully.");
+    console.log("Email:", email);
+  } else {
+    console.log(result.message);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 
 async function main() {
-  // Clean up everything from a previous seed run: the group first (its
-  // memberships/activities cascade), then all seeded users.
   await prisma.accountabilityGroup.deleteMany({ where: { inviteCode: DEMO_INVITE_CODE } });
   await prisma.user.deleteMany({ where: { email: { in: [...DEMO_EMAILS, TEST_USER_EMAIL] } } });
 
-  // Re-sync every id sequence this seed touches so IDs are deterministic.
   await resyncSequence('users', 'user_id');
-  await resyncSequence('habits', 'habit_id');
-  await resyncSequence('habit_logs', 'log_id');
+  await resyncSequence('habits', 'habitId'); // Matched to actual schema casing
+  await resyncSequence('habit_logs', 'logId'); // Matched to actual schema casing
   await resyncSequence('accountability_groups', 'group_id');
   await resyncSequence('group_memberships', 'membership_id');
   await resyncSequence('activities', 'activity_id');
 
   await seedDemoTeam();
   await seedHabitTracking();
+  await seedAdmin();
 
   console.log('Database successfully seeded.');
   console.log('Point the frontend/backend at userId=1 (Demo Student) for the demo.');

@@ -1,7 +1,7 @@
 const assert = require("assert");
 const request = require("supertest");
-const app = require("../../Micro_Groups/app");
-const prisma = require("../../Micro_Groups/prismaClient");
+const app = require("../../Server");
+const prisma = require("../../prisma/client");
 
 // remove a test group and its memberships from the database
 async function cleanupGroup(groupId)

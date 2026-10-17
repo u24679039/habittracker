@@ -9,7 +9,7 @@ const Habit_Log = require('./Habit_Log');
 //-------------------------------------------------------------------------
 const express = require('express');
 const router = express.Router();
-const { prisma } = require('../prisma/client'); // pulls from client.js
+const prisma  = require('../prisma/client'); // pulls from client.js
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
@@ -264,7 +264,12 @@ router.post('/api/habits', async (req, res) => {
 
 // Log Rest Day
 router.post('/api/habits/:id/rest', async (req, res) => {
-    const habitId = req.params.id;
+    const habitId = parseInt(req.params.id, 10);
+
+    // 2. Validate that habitId is a valid number
+    if (isNaN(habitId)) {
+        return res.status(400).json({ error: 'Invalid habit ID format' });
+    }
     const { date, note } = req.body;
     const targetDate = new Date(date || new Date());
     try {
@@ -285,7 +290,12 @@ router.post('/api/habits/:id/rest', async (req, res) => {
 
 // Log Snooze Day
 router.post('/api/habits/:id/snooze', async (req, res) => {
-    const habitId = req.params.id;
+    const habitId = parseInt(req.params.id, 10);
+
+    // 2. Validate that habitId is a valid number
+    if (isNaN(habitId)) {
+        return res.status(400).json({ error: 'Invalid habit ID format' });
+    }
     const { date, note } = req.body;
     const targetDate = new Date(date || new Date());
     try {
@@ -302,7 +312,12 @@ router.post('/api/habits/:id/snooze', async (req, res) => {
 
 // Log progress for a specific habit
 router.post('/api/habits/:id/log', async (req, res) => {
-    const habitId = req.params.id;
+    const habitId = parseInt(req.params.id, 10);
+
+    // 2. Validate that habitId is a valid number
+    if (isNaN(habitId)) {
+        return res.status(400).json({ error: 'Invalid habit ID format' });
+    }
     const { date, value, note } = req.body;
     const targetDate = new Date(date || new Date());
     try {
@@ -321,7 +336,12 @@ router.post('/api/habits/:id/log', async (req, res) => {
 
 // Edit habit details
 router.patch('/api/habits/:id', async (req, res) => {
-    const habitId = req.params.id;
+    const habitId = parseInt(req.params.id, 10);
+
+    // 2. Validate that habitId is a valid number
+    if (isNaN(habitId)) {
+        return res.status(400).json({ error: 'Invalid habit ID format' });
+    }
     const updates = req.body;
     try {
         await updateHabitDetails(habitId, updates);
@@ -333,7 +353,12 @@ router.patch('/api/habits/:id', async (req, res) => {
 
 // Archive a habit
 router.patch('/api/habits/:id/archive', async (req, res) => {
-    const habitId = req.params.id;
+    const habitId = parseInt(req.params.id, 10);
+
+    // 2. Validate that habitId is a valid number
+    if (isNaN(habitId)) {
+        return res.status(400).json({ error: 'Invalid habit ID format' });
+    }
     try {
         const didArchive = await archiveHabit(habitId);
         // Now that archiveHabit() can honestly tell us "nothing changed,
@@ -349,7 +374,12 @@ router.patch('/api/habits/:id/archive', async (req, res) => {
 
 // Restore an archived habit to the active list.
 router.patch('/api/habits/:id/unarchive', async (req, res) => {
-    const habitId = req.params.id;
+    const habitId = parseInt(req.params.id, 10);
+
+    // 2. Validate that habitId is a valid number
+    if (isNaN(habitId)) {
+        return res.status(400).json({ error: 'Invalid habit ID format' });
+    }
     try {
         const didActivate = await ActivateHabit(habitId);
         res.status(200).json({
@@ -382,8 +412,8 @@ router.get('/api/users/:userId/habits', async (req, res) => {
 router.get('/api/users', async (req, res) => {
     const users = await prisma.user.findMany({
         select: {
-            id: true,
-            name: true,
+            userId: true,
+            title: true,
             email: true }
     });
     res.json(users);
@@ -391,7 +421,12 @@ router.get('/api/users', async (req, res) => {
 
 //log an increment for a specific habit
 router.post('/api/habits/:id/increment', async (req, res) => {
-    const habitId = req.params.id;
+    const habitId = parseInt(req.params.id, 10);
+
+    // 2. Validate that habitId is a valid number
+    if (isNaN(habitId)) {
+        return res.status(400).json({ error: 'Invalid habit ID format' });
+    }
     const { incrementBy } = req.body;
     try {
         const habit = await getHabitInstance(habitId);

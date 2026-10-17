@@ -16,7 +16,7 @@
  */
 const request = require('supertest');
 
-jest.mock('../src/db/prismaClient', () => ({
+jest.mock('../../prisma/client', () => ({
   habit: {
     findMany: jest.fn().mockResolvedValue([
       { habitId: 1, name: 'Meditate', logs: [{ status: 'COMPLETED' }, { status: 'MISSED' }] },
