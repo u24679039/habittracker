@@ -38,10 +38,10 @@ class AnalyticsService {
 
     const [completed, total] = await Promise.all([
       this.prisma.habitLog.count({
-        where: { status: 'COMPLETED', logDate: { gte: thirtyDaysAgo }, habit: { userId } },
+        where: { status: 'COMPLETED', completedAt: { gte: thirtyDaysAgo }, habit: { userId } },
       }),
       this.prisma.habitLog.count({
-        where: { logDate: { gte: thirtyDaysAgo }, habit: { userId } },
+        where: { completedAt: { gte: thirtyDaysAgo }, habit: { userId } },
       }),
     ]);
 
@@ -52,8 +52,8 @@ class AnalyticsService {
     if (habits.length > 0) {
       const history = await this.prisma.habitLog.findMany({
         where: { habit: { userId } },
-        orderBy: [{ habitId: 'asc' }, { logDate: 'asc' }],
-        select: { habitId: true, logDate: true, status: true },
+        orderBy: [{ habitId: 'asc' }, { completedAt: 'asc' }],
+        select: { habitId: true, completedAt: true, status: true },
       });
       highestStreak = AnalyticsService.longestRunEver(history);
     }
@@ -70,9 +70,9 @@ class AnalyticsService {
   /** The user's best currently-active streak across all their habits. */
   async getCurrentStreakAcrossHabits(userId) {
     const logs = await this.prisma.habitLog.findMany({
-      where: { habit: { userId, status: 'ACTIVE' } },
-      orderBy: [{ habitId: 'asc' }, { logDate: 'desc' }],
-      select: { habitId: true, logDate: true, status: true },
+      where: { habit: { userId, Activated: true } },
+      orderBy: [{ habitId: 'asc' }, { completedAt: 'desc' }],
+      select: { habitId: true, completedAt: true, status: true },
     });
 
     const byHabit = AnalyticsService.groupByHabit(logs);
@@ -97,9 +97,9 @@ class AnalyticsService {
     const logs = await this.prisma.habitLog.findMany({
       where: {
         habit: { userId },
-        logDate: { gte: new Date(from), lte: new Date(to) },
+        completedAt: { gte: new Date(from), lte: new Date(to) },
       },
-      select: { logDate: true, status: true },
+      select: { completedAt: true, status: true },
     });
 
     return AnalyticsService.summariseByDate(logs);
@@ -109,7 +109,7 @@ class AnalyticsService {
   static summariseByDate(logs) {
     const byDate = {};
     for (const log of logs) {
-      const dateKey = new Date(log.logDate).toISOString().slice(0, 10);
+      const dateKey = new Date(log.completedAt).toISOString().slice(0, 10);
       if (!byDate[dateKey]) byDate[dateKey] = { completed: 0, total: 0 };
       byDate[dateKey].total += 1;
       if (log.status === 'COMPLETED') byDate[dateKey].completed += 1;
@@ -146,14 +146,14 @@ class AnalyticsService {
       where: {
         habit: { userId },
         status: 'COMPLETED',
-        logDate: { gte: start, lt: end },
+        completedAt: { gte: start, lt: end },
       },
-      select: { logDate: true },
+      select: { completedAt: true },
     });
 
     const heatmap = {};
     for (const log of logs) {
-      const key = new Date(log.logDate).toISOString().slice(0, 10);
+      const key = new Date(log.completedAt).toISOString().slice(0, 10);
       heatmap[key] = (heatmap[key] || 0) + 1;
     }
     return heatmap;
@@ -167,9 +167,9 @@ class AnalyticsService {
   async getPerHabitBreakdown(userId) {
     AnalyticsService.assertValidUserId(userId);
     const habits = await this.prisma.habit.findMany({
-      where: { userId, status: 'ACTIVE' },
+      where: { userId, Activated: true },
       select: {
-        name: true,
+        title: true,
         logs: { select: { status: true } },
       },
     });
@@ -179,7 +179,7 @@ class AnalyticsService {
         const total = habit.logs.length;
         const completed = habit.logs.filter((log) => log.status === 'COMPLETED').length;
         return {
-          habitName: habit.name,
+          habitName: habit.title,
           completionRate: total > 0 ? Number(((completed / total) * 100).toFixed(0)) : 0,
         };
       })
@@ -207,7 +207,7 @@ class AnalyticsService {
       let prevDate = null;
 
       for (const log of logs) {
-        const date = new Date(log.logDate);
+        const date = new Date(log.completedAt);
         const isConsecutiveDay =
           prevDate !== null && (date - prevDate) / (1000 * 60 * 60 * 24) === 1;
 

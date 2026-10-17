@@ -3,7 +3,7 @@
 // Run with: node backend/test_feedAggregationService.js
 
 const assert = require("assert");
-const { buildGroupFeed } = require("./feedAggregationService");
+const { buildGroupFeed } = require("../../Notifications/feedAggregationService");
 
 let passed = 0;
 let failed = 0;

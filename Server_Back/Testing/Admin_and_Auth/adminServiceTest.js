@@ -4,7 +4,7 @@ const {
   reviewFlaggedGroup,
   removeGroup,
   groups
-} = require("./adminService");
+} = require("../../Auth_Security_Admin/adminService");
 
 function runTests() {
   console.log("TEST 1: Flag existing group");

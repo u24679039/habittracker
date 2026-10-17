@@ -4,7 +4,7 @@ const assert = require("assert");
 const {
   checkForMilestone,
   buildMilestoneMessage,
-} = require("./milestoneService");
+} = require("../../Notifications/milestoneService");
 
 // Helper: don't have to write try/catch for every test
 let passed = 0;

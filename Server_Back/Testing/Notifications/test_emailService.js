@@ -6,7 +6,7 @@
 // Run with: node backend/test_emailService.js
 
 const assert = require("assert");
-const { buildMilestoneEmailContent } = require("./emailService");
+const { buildMilestoneEmailContent } = require("../../Notifications/emailService");
 
 let passed = 0;
 let failed = 0;

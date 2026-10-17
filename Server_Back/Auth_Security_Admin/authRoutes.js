@@ -20,16 +20,14 @@ const {
   removeGroup
 } = require("./adminService");
 
-const app = express();
-
-app.use(express.json());
+const router = express.Router();
 
 // ====================
 // Authentication Routes
 // ====================
 
 // Register a new user
-app.post("/api/auth/register", async (req, res) => {
+router.post("/api/auth/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -55,7 +53,7 @@ app.post("/api/auth/register", async (req, res) => {
 });
 
 // Login
-app.post("/api/auth/login", async (req, res) => {
+router.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -84,7 +82,7 @@ app.post("/api/auth/login", async (req, res) => {
 // ====================
 
 // Get authenticated user's profile
-app.get(
+router.get(
   "/api/profile",
   authenticateToken,
   async (req, res) => {
@@ -110,7 +108,7 @@ app.get(
 );
 
 // Update authenticated user's profile
-app.put(
+router.put(
   "/api/profile",
   authenticateToken,
   async (req, res) => {
@@ -139,7 +137,7 @@ app.put(
 );
 
 // Delete authenticated user's account
-app.delete(
+router.delete(
   "/api/profile",
   authenticateToken,
   async (req, res) => {
@@ -169,7 +167,7 @@ app.delete(
 // ====================
 
 // Flag a group
-app.put(
+router.put(
   "/api/admin/groups/:groupId/flag",
   authenticateToken,
   requireAdmin,
@@ -200,7 +198,7 @@ app.put(
 );
 
 // Get all flagged groups
-app.get(
+router.get(
   "/api/admin/flagged-groups",
   authenticateToken,
   requireAdmin,
@@ -224,7 +222,7 @@ app.get(
 );
 
 // Review a flagged group
-app.put(
+router.put(
   "/api/admin/groups/:groupId/review",
   authenticateToken,
   requireAdmin,
@@ -255,7 +253,7 @@ app.put(
 );
 
 // Remove a group
-app.delete(
+router.delete(
   "/api/admin/groups/:groupId",
   authenticateToken,
   requireAdmin,
@@ -288,28 +286,28 @@ app.delete(
 // Basic Health Check
 // ====================
 
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "HabitTracker API is running."
-  });
-});
+// router.get("/", (req, res) => {
+//   res.json({
+//     success: true,
+//     message: "HabitTracker API is running."
+//   });
+// });
 
 // ====================
 // Server
 // ====================
 
-const PORT = process.env.PORT || 3000;
+// const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT, () => {
-  console.log(
-    `HabitTracker server running on http://localhost:${PORT}`
-  );
-});
+// const server = router.listen(PORT, () => {
+//   console.log(
+//     `HabitTracker server running on http://localhost:${PORT}`
+//   );
+// });
 
-// Display unexpected server errors instead of silently exiting.
-server.on("error", (error) => {
-  console.error("Server error:", error);
-});
+// // Display unexpected server errors instead of silently exiting.
+// server.on("error", (error) => {
+//   console.error("Server error:", error);
+// });
 
-module.exports = app;
+module.exports = router;

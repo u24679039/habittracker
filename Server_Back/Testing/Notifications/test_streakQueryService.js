@@ -2,7 +2,7 @@
 // Run with: node backend/test_streakQueryService.js
 
 const assert = require("assert");
-const { getCurrentStreaksForGroup } = require("./streakQueryService");
+const { getCurrentStreaksForGroup } = require("../../Notifications/streakQueryService");
 
 let passed = 0;
 let failed = 0;

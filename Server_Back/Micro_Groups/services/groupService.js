@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const prisma = require("../prismaClient");
+const prisma = require("../../prisma/client");
 
 
 // Generate a secure random 6-character invitation code.

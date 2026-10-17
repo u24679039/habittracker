@@ -7,7 +7,7 @@ const {
   processQueue,
   getQueue,
   clearQueue,
-} = require("./notificationQueue");
+} = require("../../Notifications/notificationQueue");
 
 let passed = 0;
 let failed = 0;

@@ -3,7 +3,7 @@
 // Run with: node backend/test_notificationOrchestrator.js
 
 const assert = require("assert");
-const { notifyIfMilestone } = require("./notificationOrchestrator");
+const { notifyIfMilestone } = require("../../Notifications/notificationOrchestrator");
 
 let passed = 0;
 let failed = 0;

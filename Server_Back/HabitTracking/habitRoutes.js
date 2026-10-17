@@ -4,14 +4,11 @@ const Habit = require('./Habit');
 // const myHabit = new Habit(1, 101, "Exercise", "Daily workout", 30, "minutes", "DAILY", "ACTIVE");
 // myHabit.create();
 const Habit_Log = require('./Habit_Log');
-//--------------------------------Testing----------------------------------
-//-------------------------------------------------------------------------
-const HabitLogic = require('../Testing/HabitTrackTesting');
+
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
-const express = require('express');
-const cors = require('cors');
+const router = express.Router();
 const { prisma } = require('../prisma/client'); // pulls from client.js
 
 //-------------------------------------------------------------------------
@@ -249,13 +246,10 @@ async function isAlreadyLoggedToday(habitOrId, dateInput) {
 //===================================================
 
 
-const app = express();
-app.use(cors());
-// parse Json
-app.use(express.json());
+
 const cron = require('node-cron');
 // Create a new habit
-app.post('/api/habits', async (req, res) => {
+router.post('/api/habits', async (req, res) => {
     const { userId, title, description, targetVal, targetUnit, freq, status } = req.body;
     try {
         // Grabbing the saved record now that CreateAndSaveHabit() actually
@@ -269,7 +263,7 @@ app.post('/api/habits', async (req, res) => {
 });
 
 // Log Rest Day
-app.post('/api/habits/:id/rest', async (req, res) => {
+router.post('/api/habits/:id/rest', async (req, res) => {
     const habitId = req.params.id;
     const { date, note } = req.body;
     const targetDate = new Date(date || new Date());
@@ -290,7 +284,7 @@ app.post('/api/habits/:id/rest', async (req, res) => {
 });
 
 // Log Snooze Day
-app.post('/api/habits/:id/snooze', async (req, res) => {
+router.post('/api/habits/:id/snooze', async (req, res) => {
     const habitId = req.params.id;
     const { date, note } = req.body;
     const targetDate = new Date(date || new Date());
@@ -307,7 +301,7 @@ app.post('/api/habits/:id/snooze', async (req, res) => {
 });
 
 // Log progress for a specific habit
-app.post('/api/habits/:id/log', async (req, res) => {
+router.post('/api/habits/:id/log', async (req, res) => {
     const habitId = req.params.id;
     const { date, value, note } = req.body;
     const targetDate = new Date(date || new Date());
@@ -326,7 +320,7 @@ app.post('/api/habits/:id/log', async (req, res) => {
 
 
 // Edit habit details
-app.patch('/api/habits/:id', async (req, res) => {
+router.patch('/api/habits/:id', async (req, res) => {
     const habitId = req.params.id;
     const updates = req.body;
     try {
@@ -338,7 +332,7 @@ app.patch('/api/habits/:id', async (req, res) => {
 });
 
 // Archive a habit
-app.patch('/api/habits/:id/archive', async (req, res) => {
+router.patch('/api/habits/:id/archive', async (req, res) => {
     const habitId = req.params.id;
     try {
         const didArchive = await archiveHabit(habitId);
@@ -354,7 +348,7 @@ app.patch('/api/habits/:id/archive', async (req, res) => {
 });
 
 // Restore an archived habit to the active list.
-app.patch('/api/habits/:id/unarchive', async (req, res) => {
+router.patch('/api/habits/:id/unarchive', async (req, res) => {
     const habitId = req.params.id;
     try {
         const didActivate = await ActivateHabit(habitId);
@@ -367,7 +361,7 @@ app.patch('/api/habits/:id/unarchive', async (req, res) => {
 });
 
 // Return active or archived habits for one user.
-app.get('/api/users/:userId/habits', async (req, res) => {
+router.get('/api/users/:userId/habits', async (req, res) => {
     const userId = parseInt(req.params.userId);
     const archived = req.query.archived === 'true';
     try {
@@ -385,13 +379,18 @@ app.get('/api/users/:userId/habits', async (req, res) => {
 });
 
 // Return all users for the temporary user selector.
-app.get('/api/users', async (req, res) => {
-    const users = await prisma.user.findMany();
+router.get('/api/users', async (req, res) => {
+    const users = await prisma.user.findMany({
+        select: {
+            id: true,
+            name: true,
+            email: true }
+    });
     res.json(users);
 });
 
 //log an increment for a specific habit
-app.post('/api/habits/:id/increment', async (req, res) => {
+router.post('/api/habits/:id/increment', async (req, res) => {
     const habitId = req.params.id;
     const { incrementBy } = req.body;
     try {
@@ -461,7 +460,4 @@ cron.schedule('0 0 * * *', async () => {
     }
 });
 
-
-app.listen(3000, () => {
-    console.log('Server running on port 3000');
-});
+module.exports = router;
