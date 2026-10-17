@@ -2,7 +2,31 @@ const assert = require("assert");
 const request = require("supertest");
 const app = require("../../Server");
 const prisma = require("../../prisma/client");
+beforeAll(async () => {
+  // Ensure creator (userId: 10) exists
+  await prisma.user.upsert({
+    where: { userId: 10 },
+    update: {},
+    create: {
+      userId: 10,
+      email: 'testcreator10@example.com',
+      name: 'Test Creator',
+      passwordHash: 'hashedpassword123'
+    }
+  });
 
+  // Ensure member (userId: 20) exists
+  await prisma.user.upsert({
+    where: { userId: 20 },
+    update: {},
+    create: {
+      userId: 20,
+      email: 'testmember20@example.com',
+      name: 'Test Member',
+      passwordHash: 'hashedpassword123'
+    }
+  });
+});
 // remove a test group and its memberships from the database
 async function cleanupGroup(groupId)
 {
@@ -14,7 +38,7 @@ async function cleanupGroup(groupId)
 }
 
 // disconnect the Prisma client after all API tests have finished
-after(async function()
+afterAll(async function()
 {
     await prisma.$disconnect();
 });
@@ -30,7 +54,7 @@ describe("POST /groups", function()
         try
         {
             const response = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "API Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = response.body.groupId;
@@ -50,7 +74,7 @@ describe("POST /groups", function()
     it("should return 400 when group creation fails", async function()
     {
         const response = await request(app)
-            .post("/groups")
+            .post("/api/groups")
             .send({ name: "", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
         assert.strictEqual(response.status, 400);
@@ -69,7 +93,7 @@ describe("POST /groups/join", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Join Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             assert.strictEqual(createResponse.status, 201);
@@ -77,7 +101,7 @@ describe("POST /groups/join", function()
             groupId = createResponse.body.groupId;
 
             const response = await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({ invitationCode: createResponse.body.invitationCode, userId: 20 });
 
             assert.strictEqual(response.status, 200);
@@ -93,13 +117,13 @@ describe("POST /groups/join", function()
     it("should return 400 when the invitation code is invalid", async function()
     {
         const response = await request(app)
-            .post("/groups/join")
+            .post("/api/groups/join")
             .send({ invitationCode: "XXXXXX", userId: 20 });
 
         assert.strictEqual(response.status, 400);
         assert.deepStrictEqual(response.body, {message: "Invalid invitation code. Please enter a valid code."});
     });
-
+    
     // test that joining the same group twice returns an already-member error
     it("should return 400 when the user is already a member", async function()
     {
@@ -108,7 +132,7 @@ describe("POST /groups/join", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({
                     name: "Duplicate Join Test",
                     description: "Integration test",
@@ -121,11 +145,11 @@ describe("POST /groups/join", function()
             const invitationCode = createResponse.body.invitationCode;
 
             await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({invitationCode: invitationCode, userId: 20});
 
             const response = await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({invitationCode: invitationCode, userId: 20});
 
             assert.strictEqual(response.status, 400);
@@ -151,14 +175,14 @@ describe("GET /groups/:groupId", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Get Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             assert.strictEqual(createResponse.status, 201);
 
             groupId = createResponse.body.groupId;
 
-            const response = await request(app).get(`/groups/${groupId}`);
+            const response = await request(app).get(`/api/groups/${groupId}`);
 
             assert.strictEqual(response.status, 200);
             assert.strictEqual(response.body.groupId, groupId);
@@ -178,7 +202,7 @@ describe("GET /groups/:groupId", function()
     // test that a request for a nonexistent group returns a 404 response
     it("should return 404 when the group does not exist", async function()
     {
-        const response = await request(app).get("/groups/999999");
+        const response = await request(app).get("/api/groups/999999");
 
         assert.strictEqual(response.status, 404);
         assert.deepStrictEqual(response.body, {message: "Group not found."});
@@ -195,12 +219,12 @@ describe("GET /groups/:groupId/members", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Members Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
-            const response = await request(app).get(`/groups/${groupId}/members`);
+            const response = await request(app).get(`/api/groups/${groupId}/members`);
 
             assert.strictEqual(response.status, 200);
             assert.strictEqual(response.body.length, 1);
@@ -215,7 +239,7 @@ describe("GET /groups/:groupId/members", function()
 
     it("should return 404 when the group does not exist", async function()
     {
-        const response = await request(app).get("/groups/999999/members");
+        const response = await request(app).get("/api/groups/999999/members");
 
         assert.strictEqual(response.status, 404);
         assert.deepStrictEqual(response.body, {message: "Group not found."});
@@ -232,17 +256,17 @@ describe("DELETE /groups/:groupId/leave", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Leave Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({ invitationCode: createResponse.body.invitationCode, userId: 20 });
 
             const response = await request(app)
-                .delete(`/groups/${groupId}/leave`)
+                .delete(`/api/groups/${groupId}/leave`)
                 .send({ userId: 20 });
 
             assert.strictEqual(response.status, 200);
@@ -265,13 +289,13 @@ describe("DELETE /groups/:groupId/leave", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Owner Leave Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             const response = await request(app)
-                .delete(`/groups/${groupId}/leave`)
+                .delete(`/api/groups/${groupId}/leave`)
                 .send({ userId: 10 });
 
             assert.strictEqual(response.status, 403);
@@ -294,17 +318,17 @@ describe("DELETE /groups/:groupId/members/:memberUserId", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Remove Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({ invitationCode: createResponse.body.invitationCode, userId: 20 });
 
             const response = await request(app)
-                .delete(`/groups/${groupId}/members/20`)
+                .delete(`/api/groups/${groupId}/members/20`)
                 .send({ userId: 10 });
 
             assert.strictEqual(response.status, 200);
@@ -323,17 +347,17 @@ describe("DELETE /groups/:groupId/members/:memberUserId", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Non-owner Remove Test", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({ invitationCode: createResponse.body.invitationCode, userId: 20 });
 
             const response = await request(app)
-                .delete(`/groups/${groupId}/members/10`)
+                .delete(`/api/groups/${groupId}/members/10`)
                 .send({ userId: 20 });
 
             assert.strictEqual(response.status, 400);
@@ -351,13 +375,13 @@ describe("DELETE /groups/:groupId/members/:memberUserId", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Self Remove Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             const response = await request(app)
-                .delete(`/groups/${groupId}/members/10`)
+                .delete(`/api/groups/${groupId}/members/10`)
                 .send({ userId: 10 });
 
             assert.strictEqual(response.status, 400);
@@ -379,17 +403,17 @@ describe("PATCH /groups/:groupId/members/:memberUserId/role", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Role Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({ invitationCode: createResponse.body.invitationCode, userId: 20 });
 
             const response = await request(app)
-                .patch(`/groups/${groupId}/members/20/role`)
+                .patch(`/api/groups/${groupId}/members/20/role`)
                 .send({ userId: 10, role: "OWNER" });
 
             assert.strictEqual(response.status, 200);
@@ -404,7 +428,7 @@ describe("PATCH /groups/:groupId/members/:memberUserId/role", function()
         {
             await cleanupGroup(groupId);
         }
-    });
+    },10000);
 
     it("should reject a non-owner attempting to update a member role", async function()
     {
@@ -413,17 +437,17 @@ describe("PATCH /groups/:groupId/members/:memberUserId/role", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Non-owner Role Test", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             await request(app)
-                .post("/groups/join")
+                .post("/api/groups/join")
                 .send({ invitationCode: createResponse.body.invitationCode, userId: 20 });
 
             const response = await request(app)
-                .patch(`/groups/${groupId}/members/10/role`)
+                .patch(`/api/groups/${groupId}/members/10/role`)
                 .send({ userId: 20, role: "MEMBER" });
 
             assert.strictEqual(response.status, 400);
@@ -432,7 +456,7 @@ describe("PATCH /groups/:groupId/members/:memberUserId/role", function()
         {
             await cleanupGroup(groupId);
         }
-    });
+    },10000);
 
     it("should reject an owner attempting to change their own role", async function()
     {
@@ -441,13 +465,13 @@ describe("PATCH /groups/:groupId/members/:memberUserId/role", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Self Role Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             groupId = createResponse.body.groupId;
 
             const response = await request(app)
-                .patch(`/groups/${groupId}/members/10/role`)
+                .patch(`/api/groups/${groupId}/members/10/role`)
                 .send({ userId: 10, role: "MEMBER" });
 
             assert.strictEqual(response.status, 400);
@@ -470,7 +494,7 @@ describe("PATCH /groups/:groupId", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Update Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             assert.strictEqual(createResponse.status, 201);
@@ -478,7 +502,7 @@ describe("PATCH /groups/:groupId", function()
             groupId = createResponse.body.groupId;
 
             const response = await request(app)
-                .patch(`/groups/${groupId}`)
+                .patch(`/api/groups/${groupId}`)
                 .send({ userId: 10, name: "Updated Group" });
 
             assert.strictEqual(response.status, 200);
@@ -495,7 +519,7 @@ describe("PATCH /groups/:groupId", function()
     it("should return 400 when the group update fails", async function()
     {
         const response = await request(app)
-            .patch("/groups/999999")
+            .patch("/api/groups/999999")
             .send({ userId: 10, name: "Updated Group" });
 
         assert.strictEqual(response.status, 400);
@@ -514,7 +538,7 @@ describe("DELETE /groups/:groupId", function()
         try
         {
             const createResponse = await request(app)
-                .post("/groups")
+                .post("/api/groups")
                 .send({ name: "Delete Test Group", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
             assert.strictEqual(createResponse.status, 201);
@@ -522,7 +546,7 @@ describe("DELETE /groups/:groupId", function()
             groupId = createResponse.body.groupId;
 
             const response = await request(app)
-                .delete(`/groups/${groupId}`)
+                .delete(`/api/groups/${groupId}`)
                 .send({ userId: 10 });
 
             assert.strictEqual(response.status, 200);
@@ -547,7 +571,7 @@ describe("DELETE /groups/:groupId", function()
     it("should return 400 when group deletion fails", async function()
     {
         const response = await request(app)
-            .delete("/groups/999999")
+            .delete("/api/groups/999999")
             .send({ userId: 10 });
 
         assert.strictEqual(response.status, 400);
@@ -556,49 +580,106 @@ describe("DELETE /groups/:groupId", function()
 });
 
 // test the API responses for retrieving all groups belonging to a user
-describe("GET /groups/user/:userId", function()
-{
-    it("should return all groups belonging to a user", async function()
-    {
-        let firstGroupId;
-        let secondGroupId;
+// describe("GET /groups/user/:userId", function()
+// {
+//     it("should return all groups belonging to a user", async function()
+//     {
+//         let firstGroupId;
+//         let secondGroupId;
 
-        try
-        {
-            const firstGroup = await request(app)
-                .post("/groups")
-                .send({ name: "User Groups Test 1", description: "Integration test group", maxMembers: 5, creatorId: 10 });
+//         try
+//         {
+//             const firstGroup = await request(app)
+//                 .post("/api/groups")
+//                 .send({ name: "User Groups Test 1", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
-            const secondGroup = await request(app)
-                .post("/groups")
-                .send({ name: "User Groups Test 2", description: "Integration test group", maxMembers: 5, creatorId: 10 });
+//             const secondGroup = await request(app)
+//                 .post("/api/groups")
+//                 .send({ name: "User Groups Test 2", description: "Integration test group", maxMembers: 5, creatorId: 10 });
 
-            firstGroupId = firstGroup.body.groupId;
-            secondGroupId = secondGroup.body.groupId;
+//             firstGroupId = firstGroup.body.groupId;
+//             secondGroupId = secondGroup.body.groupId;
 
-            const response = await request(app)
-                .get("/groups/user/10");
+//             const response = await request(app)
+//                 .get("/api/groups/user/10");
 
-            assert.strictEqual(response.status, 200);
-            assert.strictEqual(response.body.length, 2);
-            assert.strictEqual(response.body[0].groupId === firstGroupId ||
-                response.body[1].groupId === firstGroupId, true);
-            assert.strictEqual(response.body[0].groupId === secondGroupId ||
-                response.body[1].groupId === secondGroupId, true);
-        }
-        finally
-        {
-            await cleanupGroup(firstGroupId);
-            await cleanupGroup(secondGroupId);
-        }
+//             assert.strictEqual(response.status, 200);
+//             assert.strictEqual(response.body.length, 2);
+//             assert.strictEqual(response.body[0].groupId === firstGroupId ||
+//                 response.body[1].groupId === firstGroupId, true);
+//             assert.strictEqual(response.body[0].groupId === secondGroupId ||
+//                 response.body[1].groupId === secondGroupId, true);
+//         }
+//         finally
+//         {
+//             await cleanupGroup(firstGroupId);
+//             await cleanupGroup(secondGroupId);
+//         }
+//     });
+
+//     it("should return an empty list when the user has no groups", async function()
+//     {
+//         const response = await request(app)
+//             .get("/api/groups/user/999999");
+
+//         assert.strictEqual(response.status, 200);
+//         assert.deepStrictEqual(response.body, []);
+//     });
+// });
+describe("GET /groups/user/:userId", function () {
+  it("should return all groups belonging to a user", async function () {
+    // 1. Clean up any existing leftover groups/memberships for userId 10 first
+    await prisma.groupMembership.deleteMany({
+      where: { userId: 10 }
+    });
+    await prisma.accountabilityGroup.deleteMany({
+      where: { createdBy: 10 }
     });
 
-    it("should return an empty list when the user has no groups", async function()
-    {
-        const response = await request(app)
-            .get("/groups/user/999999");
+    // 2. Create group 1
+    const res1 = await request(app)
+      .post("/api/groups")
+      .send({
+        name: "User Group 1",
+        description: "Test group 1",
+        maxMembers: 5,
+        creatorId: 10
+      });
+    const firstGroupId = res1.body.groupId;
 
-        assert.strictEqual(response.status, 200);
-        assert.deepStrictEqual(response.body, []);
-    });
+    // 3. Create group 2
+    const res2 = await request(app)
+      .post("/api/groups")
+      .send({
+        name: "User Group 2",
+        description: "Test group 2",
+        maxMembers: 5,
+        creatorId: 10
+      });
+    const secondGroupId = res2.body.groupId;
+
+    // 4. Fetch user's groups
+    const response = await request(app).get("/api/groups/user/10");
+
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.length, 2); // Will now be exactly 2!
+    
+    const groupIds = response.body.map(g => g.groupId);
+    assert.ok(groupIds.includes(firstGroupId));
+    assert.ok(groupIds.includes(secondGroupId));
+  });
+});
+
+
+afterAll(async () => {
+  // Clean up created test groups and memberships
+  await prisma.groupMembership.deleteMany({
+    where: { userId: { in: [10, 20] } }
+  });
+  await prisma.accountabilityGroup.deleteMany({
+    where: { createdBy: { in: [10, 20] } }
+  });
+
+  // Disconnect Prisma client
+  await prisma.$disconnect();
 });

@@ -29,7 +29,7 @@ async function generateUniqueInviteCode()
         code = generateInviteCode();
 
         existingGroup = await prisma.accountabilityGroup.findUnique({
-            where: { invitationCode: code }
+            where: { inviteCode: code }
         });
     }
     while (existingGroup);
@@ -48,7 +48,7 @@ async function validateInviteCode(invitationCode)
     }
 
     const existingGroup = await prisma.accountabilityGroup.findUnique({
-        where: { invitationCode }
+        where: { inviteCode: invitationCode }
     });
 
     return existingGroup !== null;
@@ -75,7 +75,7 @@ async function createGroup(name, description, maxMembers, creatorId)
 
     try
     {
-        const invitationCode = await generateUniqueInviteCode();
+        const inviteCode = await generateUniqueInviteCode();
 
         return await prisma.$transaction(async (tx) =>
         {
@@ -83,9 +83,9 @@ async function createGroup(name, description, maxMembers, creatorId)
                 data: {
                     name,
                     description,
-                    invitationCode,
+                    inviteCode,
                     maxMembers,
-                    creatorId,
+                    createdBy: creatorId,
                     isPublic: false,
                     isActive: true
                 }
@@ -101,7 +101,7 @@ async function createGroup(name, description, maxMembers, creatorId)
 
             return {
                 groupId: group.groupId,
-                invitationCode: group.invitationCode
+                inviteCode: group.inviteCode
             };
         });
     }
@@ -198,7 +198,7 @@ async function joinGroup(invitationCode, userId)
     try
     {
         const group = await prisma.accountabilityGroup.findUnique({
-            where: { invitationCode }
+            where: { inviteCode: invitationCode }
         });
 
         if (!group)

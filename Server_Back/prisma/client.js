@@ -63,3 +63,4 @@ if (process.env.NODE_ENV !== "production") {
 
 // Export the instance directly
 module.exports = prisma;
+module.exports.prisma = prisma;

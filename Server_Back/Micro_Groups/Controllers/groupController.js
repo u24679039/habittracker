@@ -16,7 +16,7 @@ async function createGroup(req, res)
         return res.status(201).json({
             message: "Group created successfully.",
             groupId: result.groupId,
-            invitationCode: result.invitationCode
+            invitationCode: result.inviteCode
         });
     }
 }

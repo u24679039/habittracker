@@ -1,6 +1,5 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const proxyquire = require("proxyquire").noCallThru();
 
 const createGroupStub = sinon.stub();
 const joinGroupStub = sinon.stub();
@@ -26,6 +25,11 @@ const groupServiceMock = {
     getUserGroups: getUserGroupsStub
 };
 
+// proxyquire is ignored under Jest, so mock the service with jest.doMock instead.
+// It must come AFTER groupServiceMock is defined above (it is not hoisted).
+jest.resetModules();
+jest.doMock("../../Micro_Groups/services/groupService", () => groupServiceMock);
+
 const {
     createGroup,
     joinGroup,
@@ -37,9 +41,7 @@ const {
     updateGroup,
     deleteGroup,
     getUserGroups
-} = proxyquire("../controllers/groupController", {
-    "../services/groupService": groupServiceMock
-});
+} = require("../../Micro_Groups/controllers/groupController");
 
 // test the controller responses for group creation
 describe("createGroup", function()
@@ -52,7 +54,7 @@ describe("createGroup", function()
     // test successful group creation
     it("should return 201 and the created group details", async function()
     {
-        createGroupStub.resolves({ groupId: 1, invitationCode: "AB7KQ3" });
+        createGroupStub.resolves({ groupId: 1, inviteCode: "AB7KQ3" });
 
         const req = { body: { name: "Study Group", description: "Weekly study sessions", maxMembers: 5, creatorId: 10 } };
         const res = { status: sinon.stub().returnsThis(), json: sinon.stub() };

@@ -5,9 +5,10 @@
   "main": "Server.js",
   "scripts": {
     "postinstall": "prisma generate",
-    "start": "node src/server.js",
+    "start": "node Server.js",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "dev":"nodemon Server.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch"
   },
