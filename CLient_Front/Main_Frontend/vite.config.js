@@ -12,4 +12,9 @@ export default defineConfig({
     },
     dedupe: ["react", "react-dom", "recharts"],
   },
+  server: {
+    proxy: {
+      "/api": "http://localhost:3000",
+    },
+  },
 });

@@ -1,7 +1,11 @@
-/* Main application */
-.app {
-    min-height: 100vh;
-    background: #ffffff;
+/* Micro-Groups root container */
+.micro-groups-app {
+    width: 100%;
+    min-height: 0;
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: transparent;
 }
 
 /* Header */
@@ -38,9 +42,11 @@
 
 /* Groups page */
 .groups-page {
-    max-width: 1050px;
+    width: 100%;
+    max-width: 950px;
     margin: 0 auto;
     padding: 28px 24px 40px;
+    box-sizing: border-box;
 }
 
 .groups-header {

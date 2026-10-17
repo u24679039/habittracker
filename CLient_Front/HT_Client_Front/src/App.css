@@ -23,7 +23,7 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
 }
 
-.app-shell {
+.habit-app-shell {
   max-width: 640px;
   margin: 0 auto;
   padding: 48px 24px 80px;

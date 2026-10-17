@@ -1,7 +1,7 @@
 // Base URL for the backend API. Can be overridden per-environment via a
 // VITE_API_BASE env var (e.g. for a deployed backend); defaults to the
 // local dev server on port 4000 for local development/demos.
-const API_BASE = import.meta.env?.VITE_API_BASE || 'http://localhost:4000/api';
+const API_BASE = import.meta.env?.VITE_API_BASE || '/api';
 
 /**
  * Small wrapper so every call gets consistent error handling and so the

@@ -113,7 +113,7 @@ describe("GroupManagement", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups/10",
+                "/api/groups/10",
                 {
                     method: "PATCH",
                     headers: {
@@ -175,7 +175,7 @@ describe("GroupManagement", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups/10/members/2/role",
+                "/api/groups/10/members/2/role",
                 {
                     method: "PATCH",
                     headers: {

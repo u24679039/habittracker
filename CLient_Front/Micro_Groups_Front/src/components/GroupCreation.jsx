@@ -41,7 +41,7 @@ function GroupCreation({ currentUserId })
 
     try
     {
-      const response = await fetch("http://localhost:3000/groups", {
+      const response = await fetch("/api/groups", {
           method: "POST",
           headers: {
               "Content-Type": "application/json",

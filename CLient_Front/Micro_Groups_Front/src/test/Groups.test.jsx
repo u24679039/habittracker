@@ -151,7 +151,7 @@ describe("Groups", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups/10/leave",
+                "/api/groups/10/leave",
                 {
                     method: "DELETE",
                     headers: {

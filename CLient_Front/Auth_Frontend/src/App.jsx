@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
-function App({ onAuthenticated, onLogout }) {
+function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked }) {
   const [page, setPage] = useState("login");
 
   const [loginData, setLoginData] = useState({
@@ -29,7 +29,11 @@ function App({ onAuthenticated, onLogout }) {
   // Restore an existing session after refreshing the shared application.
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
-    if (savedToken) loadProfile(savedToken);
+    if (savedToken) {
+      loadProfile(savedToken).finally(() => onSessionChecked?.());
+    } else {
+      onSessionChecked?.();
+    }
   }, []);
 
   function handleLoginChange(event) {
@@ -513,12 +517,24 @@ function App({ onAuthenticated, onLogout }) {
             </div>
           </div>
 
-          <button
-            className="logout-button"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
+          <div className="auth-header-actions">
+            {onBackToDashboard && (
+              <button
+                type="button"
+                className="logout-button"
+                onClick={onBackToDashboard}
+              >
+                &larr; Back to Dashboard
+              </button>
+            )}
+            <button
+              type="button"
+              className="logout-button"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </div>
         </header>
 
         <main className="dashboard-content">
@@ -816,7 +832,7 @@ function App({ onAuthenticated, onLogout }) {
   // ====================
 
   return (
-    <div className="app">
+    <div className="auth-app">
       <div className="auth-container">
         <div className="brand-section">
           <div className="logo">✓</div>

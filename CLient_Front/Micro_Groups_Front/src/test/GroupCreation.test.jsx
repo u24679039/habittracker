@@ -49,7 +49,7 @@ describe("GroupCreation", () =>
         await waitFor(() =>
         {
             expect(fetch).toHaveBeenCalledWith(
-                "http://localhost:3000/groups",
+                "/api/groups",
                 {
                     method: "POST",
                     headers: {

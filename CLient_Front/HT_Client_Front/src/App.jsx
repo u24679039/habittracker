@@ -19,7 +19,7 @@ function todayAsInputValue() {
 }
 
 /** Renders the habit dashboard and manages its forms and API requests. */
-export default function App() {
+export default function App({ currentUserId }) {
   const [userId, setUserId] = useState('');
   const [habits, setHabits] = useState([]);
   const [habitView, setHabitView] = useState('active');
@@ -37,33 +37,37 @@ export default function App() {
   const [isIncrementing, setIsIncrementing] = useState(false);
 
   useEffect(() => {
-    /** Loads the first available user and that user's active habits. */
-    async function loadUsers() {
-      try {
-        const response = await fetch(`${API_URL}/users`);
-        if (!response.ok) throw new Error('Could not load users.');
-
-        const data = await response.json();
-        const firstUserId = data[0]?.id;
-        if (!firstUserId) {
-          setLoading(false);
-          return;
-        }
-
-        setUserId(firstUserId.toString());
-        const habitsResponse = await fetch(`${API_URL}/users/${firstUserId}/habits?archived=false`);
-        if (!habitsResponse.ok) throw new Error('Could not load habits. Is the backend running?');
-
-        setHabits(await habitsResponse.json());
-        setLoading(false);
-      } catch (requestError) {
-        setError(requestError.message);
-        setLoading(false);
-      }
+  async function loadHabits() {
+    if (!currentUserId) {
+      setUserId('');
+      setHabits([]);
+      setLoading(false);
+      return;
     }
 
-    loadUsers();
-  }, []);
+    setUserId(String(currentUserId));
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(
+        `${API_URL}/users/${currentUserId}/habits?archived=false`
+      );
+
+      if (!response.ok) {
+        throw new Error('Could not load habits.');
+      }
+
+      setHabits(await response.json());
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadHabits();
+}, [currentUserId]);
 
 /** Logs a Rest Day for the selected habit. */
 async function logRestDay(habit) {

@@ -1,30 +1,30 @@
-// GroupActivityPage.jsx
-// My part: Social Activity Feed & Notifications
+// This is the screen a user lands on after clicking "View full activity ->"
+// on the Groups page (built by Shahd). I'm NOT rebuilding that page here -
+// group creation, joining and membership are her ticket. This is only the
+// destination for that one link: my live activity feed for a single group.
 //
-// This represents the screen a user lands on after clicking
-// "View full activity ->" from the Groups page (built by Shahd, Micro-
-// Group & Invite System). I'm NOT rebuilding that whole Groups page here
-// - group creation/joining/membership management is her ticket, not
-// mine. This is specifically the destination for that one link: my
-// activity feed, given a bit of page context (a group name and a way
-// back) so it reads as sitting inside the real app rather than floating
-// on a blank page.
+// Whoever builds the app shell only needs to render it with the group the
+// user clicked on:
+//
+//   <GroupActivityPage groupId={group.groupId} groupName={group.name} />
 
 import React from "react";
-import ActivityFeedLiveDemo from "./ActivityFeedLiveDemo";
+import GroupFeed from "./GroupFeed";
 import "./GroupActivityPage.css";
 
 /**
- * @param {{groupName?: string}} props
+ * @param {{groupId: number, groupName?: string, backHref?: string}} props
+ *   backHref is where the "Back to Groups" link goes - the app shell sets
+ *   this once it has a Groups route.
  */
-function GroupActivityPage({ groupName = "Alpha Squad" }) {
+
+function GroupActivityPage({ groupId, groupName = "Your Group" }) {
   return (
     <div className="group-activity-page">
-      <a href="#" className="group-activity-page__back">
-        ← Back to Groups
-      </a>
-      <h2 className="group-activity-page__title">{groupName} — Activity</h2>
-      <ActivityFeedLiveDemo />
+      <h2 className="group-activity-page__title">
+        {groupName} — Activity
+      </h2>
+      <GroupFeed groupId={groupId} />
     </div>
   );
 }

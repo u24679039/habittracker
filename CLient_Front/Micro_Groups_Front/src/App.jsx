@@ -8,7 +8,7 @@ import GroupManagement from "./components/GroupManagement";
 import "./App.css";
 
 
-function App({ currentUserId })
+function App({ currentUserId, onViewActivity })
 {
     const [currentView, setCurrentView] = useState("groups");
     const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -29,7 +29,7 @@ function App({ currentUserId })
 
 
     return (
-        <div className="app">
+        <div className="micro-groups-app">
 
             {currentView === "groups" && (
                 <Groups
@@ -41,6 +41,7 @@ function App({ currentUserId })
                     onJoinGroup={() =>
                         setCurrentView("joinGroup")
                     }
+                    onViewActivity={onViewActivity}
                 />
             )}
 
