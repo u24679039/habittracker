@@ -208,11 +208,12 @@ class Habit {
         // "COMPLETED" now. Logging completion is really "the habit is done
         // for today", so that's what gets stored.
         this.#status = "COMPLETED";
-        this.#currValue = 0;
+        const finalVal = Number(value) || this.effectiveTargetValue;
+        this.#currValue = finalVal;
         await prisma.habit.update({
             where: { habitId: this.#habitId },
             data: {
-                currValue: 0,
+                currValue: finalVal,
                 StatusOfHabit: "COMPLETED",
             }
         });

@@ -14,29 +14,29 @@
    1. Tokens
    -------------------------------------------------------------------------- */
 :root {
-  /* Sand: backgrounds and lines */
-  --bg: #f4f1e8;
-  --surface: #fcfbf7;
-  --surface-sunken: #ece8da;
-  --line: #ddd7c6;
-  --line-strong: #c6bfa6;
+  /* Natural linen & warm clay/sage wellness palette */
+  --bg: #f5f2ea;
+  --surface: #fbf9f4;
+  --surface-sunken: #ece6d8;
+  --line: #e3dccf;
+  --line-strong: #c8bfae;
 
   /* Ink: text */
-  --ink: #272b22;
-  --ink-soft: #5d6254;
-  --ink-faint: #70745f;
+  --ink: #23271f;
+  --ink-soft: #575c4f;
+  --ink-faint: #797e70;
 
-  /* Olive and sage: primary, progress, success */
-  --olive: #4a6040;
-  --olive-hover: #3b4e33;
-  --olive-deep: #2f3b28;
-  --sage: #b7c6a5;
-  --sage-soft: #e4ebd8;
+  /* Olive and sage: deep natural botanical green */
+  --olive: #3f5536;
+  --olive-hover: #31432a;
+  --olive-deep: #253320;
+  --sage: #b3c4a1;
+  --sage-soft: #e3ebd8;
 
-  /* Clay: the single warm accent (streaks, milestones) */
-  --clay: #a5694c;
-  --clay-hover: #8c563c;
-  --clay-soft: #f0e2d8;
+  /* Clay: warm earthy terracotta accent (streaks, highlights) */
+  --clay: #a65842;
+  --clay-hover: #8f4632;
+  --clay-soft: #f4e6de;
 
   /* Supporting states */
   --ochre: #8f6c1c;
@@ -144,7 +144,7 @@ button {
    3. Page structure
    -------------------------------------------------------------------------- */
 .page-content {
-  width: min(1080px, calc(100% - 3rem));
+  width: min(1180px, calc(100% - 2.5rem));
   margin: var(--space-5) auto var(--space-6);
 }
 
@@ -194,8 +194,8 @@ button {
 }
 
 .subpage {
-  max-width: 720px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -444,9 +444,9 @@ textarea {
 .hf-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--space-3) var(--space-4);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  box-shadow: 0 4px 20px rgba(39, 43, 34, 0.035);
 }
 
 .hf-card h3,
@@ -687,21 +687,25 @@ textarea {
 }
 
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-4);
-  padding: 0.85rem 2rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  padding: 0.9rem 2.25rem;
+  background: #22331d;
+  border-bottom: 1px solid #192715;
+  box-shadow: 0 4px 18px rgba(18, 28, 15, 0.22);
 }
 
 .brand {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--olive-deep);
+  color: #f7f5ed;
 }
 
 .main-nav,
@@ -718,11 +722,11 @@ textarea {
 .nav-link,
 .header-button {
   position: relative;
-  padding: 0.5rem 0.85rem;
+  padding: 0.5rem 0.95rem;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--ink-soft);
+  color: #c9d5be;
   font: inherit;
   font-size: 0.95rem;
   cursor: pointer;
@@ -730,13 +734,13 @@ textarea {
 }
 .nav-link:hover,
 .header-button:hover {
-  background: var(--surface-sunken);
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f7f5ed;
 }
 .nav-link.active,
 .header-button.active {
-  background: var(--sage-soft);
-  color: var(--olive-deep);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -914,24 +918,49 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: 32px 36px;
+  padding: 28px 36px;
   border-radius: var(--radius-lg);
   background: var(--olive-deep);
   color: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.welcome-card__main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.welcome-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 .welcome-card h2 {
-  margin: 4px 0 8px;
+  margin: 2px 0 6px;
   color: var(--surface);
-  font-size: 2rem;
+  font-size: 1.85rem;
 }
 .welcome-label {
   margin: 0;
   color: var(--sage);
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
-.welcome-card > div > p:last-child {
+.welcome-card p {
   color: #d5ddc8;
+  font-size: 0.9rem;
 }
 .welcome-card__side {
   display: flex;
@@ -940,11 +969,13 @@ textarea {
   gap: var(--space-2);
 }
 .role-badge {
-  padding: 5px 14px;
-  border: 1px solid rgba(252, 251, 247, 0.3);
+  padding: 6px 16px;
+  border: 1px solid rgba(252, 251, 247, 0.35);
   border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .profile-grid {
@@ -1149,7 +1180,8 @@ textarea {
   gap: var(--space-4);
 }
 .hf-dashboard-grid {
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: start;
 }
 .hf-grid--stats {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -1185,18 +1217,21 @@ textarea {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-4);
-  padding: var(--space-3);
-  border-radius: var(--radius-sm);
-  background: var(--surface-sunken);
+  margin-bottom: var(--space-3);
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: var(--sage-soft);
+  border: 1px solid #d4dfc9;
 }
 .hf-target-summary h4 {
   margin-bottom: 2px;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  color: var(--olive-deep);
 }
 .hf-target-summary p {
-  color: var(--ink-soft);
+  color: var(--olive);
   font-size: 0.85rem;
+  font-weight: 500;
 }
 .hf-ring {
   position: relative;
@@ -1213,12 +1248,13 @@ textarea {
   position: absolute;
   inset: 6px;
   border-radius: 50%;
-  background: var(--surface-sunken);
+  background: var(--sage-soft);
 }
 .hf-ring span {
   position: relative;
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--olive-deep);
 }
 
 /* Habit rows */
@@ -1277,14 +1313,32 @@ textarea {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-4);
+}
+.hf-chip-row--top {
+  margin: var(--space-2) 0 var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line);
 }
 .hf-chip {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: var(--surface-sunken);
   color: var(--ink-soft);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.hf-chip:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.hf-chip--active {
+  background: var(--olive);
+  color: #ffffff;
+  border-color: var(--olive);
+  font-weight: 600;
 }
 .hf-link-action {
   margin-left: auto;
@@ -1297,24 +1351,26 @@ textarea {
   text-decoration: underline;
 }
 
-/* Heatmap panel + calendar */
+/* Heatmap panel + calendar (clean, no harsh white card nested inside green) */
 .hf-heatmap-panel {
-  padding: var(--space-3);
+  padding: var(--space-1) 0;
   overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  border: none;
+  background: transparent;
   text-align: center;
 }
 .hf-heatmap-panel__title {
   margin-bottom: var(--space-2);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
 }
 .hf-heatmap {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 6px;
 }
 .hf-heatmap__cell {
   display: flex;
@@ -1322,11 +1378,53 @@ textarea {
   justify-content: center;
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
+  transition: transform 0.1s ease;
+}
+.hf-heatmap__cell:hover {
+  transform: scale(1.08);
 }
 .hf-heatmap__label {
   color: var(--ink-faint);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Per-habit breakdown grouped sections */
+.hf-breakdown-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+.hf-breakdown-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.hf-breakdown-subhead {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hf-breakdown-subhead span {
+  font-weight: 500;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}
+.hf-empty-note {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  padding: 6px 0;
 }
 
 /* Stat cards: Fraunces numerals, clay accent */
@@ -1389,8 +1487,8 @@ textarea {
    13. Habits
    -------------------------------------------------------------------------- */
 .habit-app-shell {
-  max-width: 720px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .habit-list {
@@ -1401,7 +1499,8 @@ textarea {
 .habit-card-title-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  flex: 1;
 }
 .habit-card-title-group h3 {
   font-size: 1.15rem;
@@ -1409,6 +1508,23 @@ textarea {
 .habit-meta-text {
   color: var(--ink-soft);
   font-size: 0.82rem;
+}
+.habit-progress-line {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.habit-progress-line strong {
+  color: var(--ink);
+}
+.habit-rest-hint {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--olive);
+  background: var(--sage-soft);
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
 }
 .habit-card-status {
   display: flex;

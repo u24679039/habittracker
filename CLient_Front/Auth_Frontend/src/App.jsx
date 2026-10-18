@@ -502,80 +502,97 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
   // ====================
 
   if (page === "profile" && profile) {
+    const initials = (profile.name || "U")
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
     return (
       <div className="profile-page">
+        {onBackToDashboard && (
+          <div className="back-link" style={{ marginBottom: "1rem" }}>
+            <button
+              type="button"
+              className="btn btn--outline btn--sm"
+              onClick={onBackToDashboard}
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+        )}
 
         <div className="profile-content">
           <div className="welcome-card">
-            <div>
-              <p className="welcome-label">
-                Welcome back
-              </p>
-
-              <h2>{profile.name}</h2>
-
-              <p>
-                Manage your HabitTracker account and
-                security settings.
-              </p>
+            <div className="welcome-card__main">
+              <div className="welcome-avatar" aria-hidden="true">
+                {initials}
+              </div>
+              <div>
+                <p className="welcome-label">
+                  Your Account
+                </p>
+                <h2>{profile.name}</h2>
+                <p>
+                  {profile.email} • Manage your personal information and security settings.
+                </p>
+              </div>
             </div>
 
             <div className="welcome-card__side">
-              <span className="role-badge">{profile.role}</span>
-              <button
-                type="button"
-                className="btn btn--on-dark btn--sm"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
+              <span className="role-badge">
+                {profile.role || "MEMBER"}
+              </span>
             </div>
           </div>
 
           <div className="profile-grid">
             <section className="profile-card">
               <div className="card-heading">
-
                 <div>
                   <h3>Profile Settings</h3>
-
                   <p>
-                    Update your personal account
-                    information.
+                    Update your personal account information.
                   </p>
                 </div>
               </div>
 
               <form className="form form--stacked" onSubmit={handleProfileUpdate}>
-                <label>Full name</label>
+                <div className="field">
+                  <label htmlFor="profile-name">Full name</label>
+                  <input
+                    id="profile-name"
+                    type="text"
+                    name="name"
+                    value={profileForm.name}
+                    onChange={handleProfileChange}
+                    required
+                  />
+                </div>
 
-                <input
-                  type="text"
-                  name="name"
-                  value={profileForm.name}
-                  onChange={handleProfileChange}
-                  required
-                />
+                <div className="field">
+                  <label htmlFor="profile-email">Email address</label>
+                  <input
+                    id="profile-email"
+                    type="email"
+                    name="email"
+                    value={profileForm.email}
+                    onChange={handleProfileChange}
+                    required
+                  />
+                </div>
 
-                <label>Email address</label>
-
-                <input
-                  type="email"
-                  name="email"
-                  value={profileForm.email}
-                  onChange={handleProfileChange}
-                  required
-                />
-
-                <button
-                  className="btn btn--primary"
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading
-                    ? "Saving..."
-                    : "Save Changes"}
-                </button>
+                <div style={{ marginTop: "0.5rem" }}>
+                  <button
+                    className="btn btn--primary"
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
               </form>
             </section>
 

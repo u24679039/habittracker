@@ -6,12 +6,14 @@ import React from 'react';
  * habits were completed that day. `data` is a { 'YYYY-MM-DD': count } map,
  * as returned by AnalyticsService.getHabitDensityHeatmap.
  *
+ * Scales dynamically depending on completed habits count vs total active habits.
  * Static layout lives in tokens.css (.hf-heatmap*); only the per-day
  * colour is computed here.
  */
-export default function StreakHeatmap({ month, data }) {
+export default function StreakHeatmap({ month, data = {}, totalHabits }) {
   const days = buildMonthGrid(month);
-  const maxCount = Math.max(1, ...Object.values(data));
+  // Scale against either total active habits, highest count in data, or at least 3 for smooth tiers
+  const maxCount = Math.max(totalHabits || 0, ...Object.values(data), 3);
 
   return (
     <div>
@@ -24,15 +26,17 @@ export default function StreakHeatmap({ month, data }) {
         {days.map((day, idx) => {
           if (!day) return <div key={`pad-${idx}`} className="hf-heatmap__cell" />;
           const count = data[day.iso] || 0;
+          const ratio = count > 0 ? Math.min(1, count / maxCount) : 0;
+          const hasActivity = count > 0;
           return (
             <div
               key={day.iso}
               className="hf-heatmap__cell"
               title={`${day.iso}: ${count} habit${count === 1 ? '' : 's'} completed`}
               style={{
-                background: intensityColor(count, maxCount),
-                color: count / maxCount > 0.6 ? '#fff' : 'var(--ink)',
-                fontWeight: 500,
+                background: hasActivity ? intensityColor(count, maxCount) : 'var(--surface-sunken)',
+                color: hasActivity ? (ratio > 0.45 ? '#ffffff' : 'var(--olive-deep)') : 'var(--ink-faint)',
+                fontWeight: hasActivity ? 600 : 400,
               }}
             >
               {day.dayOfMonth}
@@ -66,15 +70,14 @@ function buildMonthGrid(month) {
 }
 
 /**
- * Maps a completed-habit count to a background colour, scaling from sand
- * (0 completions) through increasingly saturated olive-sage up to `maxCount`
- * (the busiest day in the current dataset), so the scale is always relative
- * to this month's data. The hue (~105) sits next to the app's --olive and
- * --sage tokens so "completed" reads as the same green everywhere it appears.
+ * Maps a completed-habit count to a dynamic background colour.
+ * Scales dynamically from sand (0 completions) through lighter sage to deep olive
+ * based on the completion ratio against maxCount.
  */
 function intensityColor(count, maxCount) {
-  if (count === 0) return '#ece8da'; // --surface-sunken
+  if (!count || count <= 0) return '#ece8da'; // --surface-sunken (empty day)
   const ratio = Math.min(1, count / maxCount);
-  const lightness = 86 - ratio * 54;
-  return `hsl(105, 24%, ${lightness}%)`;
+  const lightness = Math.round(82 - ratio * 48);
+  const saturation = Math.round(26 + ratio * 24);
+  return `hsl(105, ${saturation}%, ${lightness}%)`;
 }

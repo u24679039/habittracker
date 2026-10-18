@@ -77,8 +77,13 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
             const existingIndex = finalBreakdown.findIndex((b) => b.habitName === h.title);
             if (existingIndex >= 0) {
               finalBreakdown[existingIndex].completionRate = Math.max(finalBreakdown[existingIndex].completionRate, rate);
+              finalBreakdown[existingIndex].status = h.StatusOfHabit || 'ACTIVE';
             } else {
-              finalBreakdown.push({ habitName: h.title, completionRate: rate });
+              finalBreakdown.push({
+                habitName: h.title,
+                completionRate: rate,
+                status: h.StatusOfHabit || 'ACTIVE',
+              });
             }
           });
         }
@@ -89,16 +94,25 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
           finalHeatmap[today] = Math.max(finalHeatmap[today] || 0, activeTodayCount || 1);
         }
 
-        // Enhanced Trend: reflect today's execution rate in the weekly chart
-        let finalTrend = Array.isArray(trendData) ? [...trendData] : [];
+        // Enhanced Trend: pad all 7 days with 0 for missing dates
+        const trendMap = {};
+        if (Array.isArray(trendData)) {
+          trendData.forEach((item) => {
+            trendMap[item.date] = item.completionRate;
+          });
+        }
         if (avgTodayRate > 0) {
-          const todayIndex = finalTrend.findIndex((t) => t.date === today);
-          if (todayIndex >= 0) {
-            finalTrend[todayIndex].completionRate = Math.max(finalTrend[todayIndex].completionRate, avgTodayRate);
-          } else {
-            finalTrend.push({ date: today, completionRate: avgTodayRate });
-            finalTrend.sort((a, b) => a.date.localeCompare(b.date));
-          }
+          trendMap[today] = Math.max(trendMap[today] || 0, avgTodayRate);
+        }
+
+        const paddedTrend = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+          const dateStr = d.toISOString().slice(0, 10);
+          paddedTrend.push({
+            date: dateStr,
+            completionRate: trendMap[dateStr] !== undefined ? trendMap[dateStr] : 0,
+          });
         }
 
         // Enhanced Summary stats
@@ -114,7 +128,7 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
         }
 
         setSummary(finalSummary);
-        setTrend(finalTrend);
+        setTrend(paddedTrend);
         setHeatmap(finalHeatmap);
         setBreakdown(finalBreakdown);
       } catch (err) {
@@ -127,6 +141,17 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
       cancelled = true;
     };
   }, [userId, weekAgo, today, month, habitLogCount]);
+
+  // Organize breakdown into active, rest day, and snoozed groups
+  const activeHabits = Array.isArray(breakdown)
+    ? breakdown.filter((h) => h.status !== 'REST_DAY' && h.status !== 'SNOOZED')
+    : [];
+  const restHabits = Array.isArray(breakdown)
+    ? breakdown.filter((h) => h.status === 'REST_DAY')
+    : [];
+  const snoozedHabits = Array.isArray(breakdown)
+    ? breakdown.filter((h) => h.status === 'SNOOZED')
+    : [];
 
   return (
     <div className="hf-page">
@@ -145,11 +170,31 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
 
       {error && <div className="hf-error-banner">Couldn't load analytics: {error}</div>}
 
-      {/* Top Stat Cards */}
+      {/* Top Stat Cards - identical styling to dashboard */}
       <div className="hf-grid hf-grid--stats">
-        <StatCard label="Current streak" value={summary && `${summary.currentStreak} days`} />
-        <StatCard label="Highest streak" value={summary && `${summary.highestStreak} days`} />
-        <StatCard label="Avg completion" value={summary && `${summary.avgCompletion}%`} />
+        <section className="hf-card hf-stat-card">
+          <p className="hf-stat-label">Current Streak</p>
+          <p className="hf-stat-value">
+            {summary ? summary.currentStreak : 0}{' '}
+            <span className="hf-stat-unit">{summary?.currentStreak === 1 ? 'DAY' : 'DAYS'}</span>
+          </p>
+        </section>
+
+        <section className="hf-card hf-stat-card">
+          <p className="hf-stat-label">Highest Streak</p>
+          <p className="hf-stat-value">
+            {summary ? summary.highestStreak : 0}{' '}
+            <span className="hf-stat-unit">{summary?.highestStreak === 1 ? 'DAY' : 'DAYS'}</span>
+          </p>
+        </section>
+
+        <section className="hf-card hf-stat-card">
+          <p className="hf-stat-label">Avg Completion</p>
+          <p className="hf-stat-value">
+            {summary ? summary.avgCompletion : 0}{' '}
+            <span className="hf-stat-unit">%</span>
+          </p>
+        </section>
       </div>
 
       {/* Execution Consistency Chart Section */}
@@ -158,8 +203,7 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
           Execution consistency (last 7 days)
         </h3>
         {trend === null && !error && <p className="hf-empty-state">Loading trend...</p>}
-        {trend && trend.length === 0 && <p className="hf-empty-state">No logs yet this week.</p>}
-        {trend && trend.length > 0 && (
+        {trend && (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trend}>
               <CartesianGrid stroke={CHART_GRID} vertical={false} />
@@ -178,55 +222,96 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
         )}
       </section>
 
-      {/* Two-column layout: heatmap + per-habit breakdown */}
+      {/* Two-column layout: heatmap + per-habit breakdown (clean cards, no green-on-white nesting) */}
       <div className="hf-grid hf-analytics-two-col">
-        <section className="hf-hero-card">
+        <section className="hf-card">
           <div className="hf-section-head">
-            <h3>Habit density heatmap</h3>
+            <h3>Habit Density Heatmap</h3>
           </div>
           {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
           {heatmap && (
             <div className="hf-heatmap-panel">
-              <StreakHeatmap month={month} data={heatmap} />
+              <StreakHeatmap month={month} data={heatmap} totalHabits={breakdown?.length || 0} />
             </div>
           )}
         </section>
 
-        <section className="hf-hero-card">
+        <section className="hf-card">
           <div className="hf-section-head">
-            <h3>Per-habit breakdown</h3>
+            <h3>Per-Habit Breakdown</h3>
           </div>
           {breakdown === null && !error && <p className="hf-empty-state">Loading breakdown...</p>}
           {breakdown && breakdown.length === 0 && (
             <p className="hf-empty-state">No active habits to break down yet.</p>
           )}
-          {breakdown && (
-            <div className="hf-list">
-              {breakdown.map((habit) => (
-                <div className="hf-list-item" key={habit.habitName}>
-                  <span className="hf-list-item__name">{habit.habitName}</span>
-                  <div className="hf-progress-track">
-                    <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+
+          {breakdown && breakdown.length > 0 && (
+            <div className="hf-breakdown-groups">
+              {/* Active habits section */}
+              <div className="hf-breakdown-section">
+                <h4 className="hf-breakdown-subhead">
+                  Active Habits <span>({activeHabits.length})</span>
+                </h4>
+                {activeHabits.length === 0 ? (
+                  <p className="hf-empty-note">No active habits today.</p>
+                ) : (
+                  <div className="hf-list">
+                    {activeHabits.map((habit) => (
+                      <div className="hf-list-item" key={habit.habitName}>
+                        <span className="hf-list-item__name">{habit.habitName}</span>
+                        <div className="hf-progress-track">
+                          <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+                        </div>
+                        <span className="hf-pct">{habit.completionRate}%</span>
+                      </div>
+                    ))}
                   </div>
-                  <span className="hf-pct">{habit.completionRate}%</span>
+                )}
+              </div>
+
+              {/* Rest Day section */}
+              {restHabits.length > 0 && (
+                <div className="hf-breakdown-section">
+                  <h4 className="hf-breakdown-subhead">
+                    Rest Day <span>({restHabits.length})</span>
+                  </h4>
+                  <div className="hf-list">
+                    {restHabits.map((habit) => (
+                      <div className="hf-list-item" key={habit.habitName}>
+                        <span className="hf-list-item__name">{habit.habitName}</span>
+                        <div className="hf-progress-track">
+                          <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+                        </div>
+                        <span className="hf-pct">{habit.completionRate}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* Snoozed section */}
+              {snoozedHabits.length > 0 && (
+                <div className="hf-breakdown-section">
+                  <h4 className="hf-breakdown-subhead">
+                    Snoozed <span>({snoozedHabits.length})</span>
+                  </h4>
+                  <div className="hf-list">
+                    {snoozedHabits.map((habit) => (
+                      <div className="hf-list-item" key={habit.habitName}>
+                        <span className="hf-list-item__name">{habit.habitName}</span>
+                        <div className="hf-progress-track">
+                          <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+                        </div>
+                        <span className="hf-pct">{habit.completionRate}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </section>
       </div>
-    </div>
-  );
-}
-
-/**
- * Reusable stat card: label above, Fraunces numeral in the clay accent.
- */
-function StatCard({ label, value }) {
-  return (
-    <div className="hf-card hf-stat-card">
-      <p className="hf-stat-label">{label}</p>
-      <p className="hf-stat-value">{value ?? '—'}</p>
     </div>
   );
 }

@@ -273,13 +273,13 @@ async function logSnoozeDay(habit) {
   /** Opens the completion form for a habit with its target as the default value. */
   function openLogModal(habit) {
     setLoggingHabit(habit);
-    const requiredTarget = habit.StatusOfHabit === 'REST_DAY'
-    ? Math.ceil(habit.targetValue / 2)
-    : habit.targetValue;
+    const requiredTarget = habit.StatusOfHabit === 'SNOOZED'
+      ? Math.max(1, Math.ceil(habit.targetValue / 2))
+      : habit.targetValue;
 
-    const finalValue = (habit.currValue && habit.currValue>habit.targetValue)
-    ? habit.currValue
-    : habit.targetValue;
+    const finalValue = (habit.currValue && habit.currValue > requiredTarget)
+      ? habit.currValue
+      : requiredTarget;
     setLogForm({ date: todayAsInputValue(), value: finalValue.toString(), note: '' });
     setError('');
   }
@@ -442,6 +442,12 @@ async function logSnoozeDay(habit) {
             const isCompleted = status === 'COMPLETED';
             const isSnoozed   = status === 'SNOOZED';
             const isRestDay   = status === 'REST_DAY';
+            const effectiveTarget = isSnoozed
+              ? Math.max(1, Math.ceil((habit.targetValue || 1) / 2))
+              : (habit.targetValue || 1);
+            const displayCurrValue = isCompleted
+              ? Math.max(habit.currValue || 0, effectiveTarget)
+              : (habit.currValue || 0);
 
             return (
               <article className="group-card habit-card" key={habit.habitId}>
@@ -449,22 +455,34 @@ async function logSnoozeDay(habit) {
                   <div className="habit-card-title-group">
                     <h3>{habit.title}</h3>
                     <span className="habit-meta-text">
-                      {habit.targetValue} {habit.targetUnit} · {habit.frequency.toLowerCase()}
+                      {isSnoozed ? (
+                        <>Target: {effectiveTarget} {habit.targetUnit} (snoozed from {habit.targetValue}) · {habit.frequency.toLowerCase()}</>
+                      ) : (
+                        <>{habit.targetValue} {habit.targetUnit} · {habit.frequency.toLowerCase()}</>
+                      )}
                     </span>
+                    <div className="habit-progress-line">
+                      Progress: <strong>{displayCurrValue} / {effectiveTarget} {habit.targetUnit}</strong>
+                    </div>
+                    {isRestDay && (
+                      <div className="habit-rest-hint">
+                        Rest Day · No logging needed today
+                      </div>
+                    )}
                   </div>
 
                   <div className="habit-card-status">
                     {isCompleted && (
-                      <span className="habit-status-badge habit-status-badge--completed">✓ Logged today</span>
+                      <span className="habit-status-badge habit-status-badge--completed">Logged today</span>
                     )}
                     {isSnoozed && (
-                      <span className="habit-status-badge habit-status-badge--snoozed">⏰ Snoozed</span>
+                      <span className="habit-status-badge habit-status-badge--snoozed">Snoozed</span>
                     )}
                     {isRestDay && (
-                      <span className="habit-status-badge habit-status-badge--rest">🛌 Rest day</span>
+                      <span className="habit-status-badge habit-status-badge--rest">Rest day</span>
                     )}
                     {!isCompleted && !isSnoozed && !isRestDay && habitView === 'active' && (
-                      <span className="habit-status-badge habit-status-badge--active">● Active</span>
+                      <span className="habit-status-badge habit-status-badge--active">Active</span>
                     )}
                   </div>
                 </div>
@@ -475,12 +493,6 @@ async function logSnoozeDay(habit) {
 
                 <div className="group-card-meta">
                   <div className="group-code-actions">
-                    {habit.currValue !== undefined && habit.currValue !== null && habit.currValue > 0 && (
-                      <span className="invite-code">
-                        Progress: <strong>{habit.currValue} / {habit.targetValue} {habit.targetUnit}</strong>
-                      </span>
-                    )}
-
                     {habitView === 'active' && (
                       <>
                         <button
@@ -490,7 +502,7 @@ async function logSnoozeDay(habit) {
                           disabled={isCompleted}
                           title={isCompleted ? 'Already logged today' : undefined}
                         >
-                          {isCompleted ? '✓ Done' : '+ Log Increment'}
+                          {isCompleted ? 'Done' : '+ Log Increment'}
                         </button>
 
                         <button
@@ -644,7 +656,7 @@ async function logSnoozeDay(habit) {
         <form className="modal-panel__body form" onSubmit={submitIncrement}>
           <p className="habit-row__desc">
             Progress: {incrementingHabit.currValue || 0} /{ 
-            incrementingHabit.StatusOfHabit === 'REST_DAY'
+            incrementingHabit.StatusOfHabit === 'SNOOZED'
             ? Math.ceil(incrementingHabit.targetValue / 2) 
             : incrementingHabit.targetValue
             } {incrementingHabit.targetUnit}
@@ -703,7 +715,8 @@ async function logSnoozeDay(habit) {
 
             <form className="modal-panel__body form" onSubmit={logCompletion}>
               <p className="habit-row__desc">
-                Target: {loggingHabit.targetValue} {loggingHabit.targetUnit}
+                Target: {loggingHabit.StatusOfHabit === 'SNOOZED' ? Math.max(1, Math.ceil(loggingHabit.targetValue / 2)) : loggingHabit.targetValue} {loggingHabit.targetUnit}
+                {loggingHabit.StatusOfHabit === 'SNOOZED' && ' (reduced for snooze)'}
               </p>
 
               <div className="field-row">

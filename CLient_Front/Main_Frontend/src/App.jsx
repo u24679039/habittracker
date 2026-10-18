@@ -25,13 +25,15 @@ function NotificationsMenu({ items = [], unreadCount = 0, onOpen }) {
   const ref = useRef(null);
   const open = hovering || pinned;
 
-  // Call onOpen whenever the panel opens so the parent can reset the unread count.
-  const prevOpen = useRef(false);
+  // Only clear unread count once the cursor has stopped hovering / panel closes
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (open && !prevOpen.current && onOpen) {
-      onOpen();
+    if (open) {
+      wasOpen.current = true;
+    } else if (wasOpen.current) {
+      wasOpen.current = false;
+      onOpen?.();
     }
-    prevOpen.current = open;
   }, [open, onOpen]);
 
   useEffect(() => {
@@ -189,6 +191,7 @@ function App() {
   const headerVisible = Boolean(authenticatedUser || checkingSession);
 
   function handleLogout() {
+    localStorage.removeItem("token");
     setAuthenticatedUser(null);
     setCheckingSession(false);
     sessionStorage.removeItem("habitTrackerPage");
@@ -239,10 +242,37 @@ function App() {
               type="button"
               className={showingProfile ? "header-button active" : "header-button"}
               aria-current={showingProfile ? "page" : undefined}
+              aria-label="Profile"
+              title="Profile"
               onClick={() => goTo(PROFILE_PAGE)}
             >
-              Profile
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
             </button>
+
+            {authenticatedUser && (
+              <button
+                type="button"
+                className="header-button"
+                aria-label="Log out"
+                title="Log out"
+                onClick={handleLogout}
+              >
+                Log out
+              </button>
+            )}
           </div>
         </header>
       )}
@@ -258,6 +288,7 @@ function App() {
               setActiveGroup(null);
             }}
             onLogout={handleLogout}
+            onBackToDashboard={() => goTo("Dashboard")}
             onSessionChecked={() => setCheckingSession(false)}
           />
         </div>
@@ -267,6 +298,7 @@ function App() {
             <Dashboard
               userId={currentUserId}
               habitLogCount={habitLogCount}
+              onHabitLogged={incrementHabitLogCount}
               groupActivities={groupActivities}
               onNavigate={(page, options) => {
                 const destinations = {

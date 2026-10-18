@@ -5,12 +5,10 @@ import GroupCreation from "./components/GroupCreation";
 import JoinGroup from "./components/JoinGroup";
 import GroupManagement from "./components/GroupManagement";
 
-
 function App({ currentUserId, onViewActivity })
 {
     const [currentView, setCurrentView] = useState("groups");
     const [selectedGroupId, setSelectedGroupId] = useState(null);
-
 
     function openGroups()
     {
@@ -18,88 +16,70 @@ function App({ currentUserId, onViewActivity })
         setSelectedGroupId(null);
     }
 
-
     function openGroup(groupId)
     {
         setSelectedGroupId(groupId);
         setCurrentView("groupManagement");
     }
 
-
     return (
         <div className="micro-groups-app">
+            <Groups
+                currentUserId={currentUserId}
+                onManageGroup={openGroup}
+                onCreateGroup={() => setCurrentView("groupCreation")}
+                onJoinGroup={() => setCurrentView("joinGroup")}
+                onViewActivity={onViewActivity}
+            />
 
-            {currentView === "groups" && (
-                <Groups
+            {/* In-place modal popups matching habit forms */}
+            {currentView === "groupCreation" && (
+                <GroupCreation
                     currentUserId={currentUserId}
-                    onManageGroup={openGroup}
-                    onCreateGroup={() =>
-                        setCurrentView("groupCreation")
-                    }
-                    onJoinGroup={() =>
-                        setCurrentView("joinGroup")
-                    }
-                    onViewActivity={onViewActivity}
+                    onClose={openGroups}
                 />
             )}
 
+            {currentView === "joinGroup" && (
+                <JoinGroup
+                    currentUserId={currentUserId}
+                    onSuccess={openGroups}
+                    onClose={openGroups}
+                />
+            )}
 
             {currentView === "groupManagement" && (
-                <div className="action-page">
-                    <button
-                        type="button"
-                        className="btn btn--text back-link"
-                        onClick={openGroups}
+                <div className="modal-backdrop" role="presentation" onMouseDown={openGroups}>
+                    <section
+                        className="modal-panel"
+                        style={{ maxWidth: '640px' }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="group-manage-modal-title"
+                        onMouseDown={(e) => e.stopPropagation()}
                     >
-                        ← Back to Groups
-                    </button>
-
-                    <GroupManagement
-                        groupId={selectedGroupId}
-                        currentUserId={currentUserId}
-                        onDelete={openGroups}
-                    />
+                        <header className="modal-panel__header">
+                            <h2 id="group-manage-modal-title">Group Settings</h2>
+                            <button
+                                className="modal-panel__close"
+                                type="button"
+                                onClick={openGroups}
+                            >
+                                ×
+                            </button>
+                        </header>
+                        <div className="modal-panel__body">
+                            <GroupManagement
+                                groupId={selectedGroupId}
+                                currentUserId={currentUserId}
+                                onDelete={openGroups}
+                            />
+                        </div>
+                    </section>
                 </div>
             )}
-
-
-            {currentView === "groupCreation" && (
-                <div className="action-page">
-                    <button
-                        type="button"
-                        className="btn btn--text back-link"
-                        onClick={openGroups}
-                    >
-                        ← Back to Groups
-                    </button>
-
-                    <GroupCreation
-                        currentUserId={currentUserId}
-                    />
-                </div>
-            )}
-
-
-            {currentView === "joinGroup" && (
-                <div className="action-page">
-                    <button
-                        type="button"
-                        className="btn btn--text back-link"
-                        onClick={openGroups}
-                    >
-                        ← Back to Groups
-                    </button>
-
-                    <JoinGroup
-                        currentUserId={currentUserId}
-                        onSuccess={openGroups}
-                    />
-                </div>
-            )}
-
         </div>
     );
 }
-
 
 export default App;

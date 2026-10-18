@@ -379,10 +379,6 @@ function Groups({
                                                         );
                                                     }}
                                                 >
-                                                    <span className="action-icon">
-                                                        ↗
-                                                    </span>
-
                                                     {isLeaving
                                                         ? "Leaving..."
                                                         : "Leave"}
