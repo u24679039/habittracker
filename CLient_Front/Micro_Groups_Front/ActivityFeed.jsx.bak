@@ -7,7 +7,6 @@
 
 import React from "react";
 import { formatRelativeTime, getInitials } from "./feedDisplayHelpers";
-import "./ActivityFeed.css";
 
 // Allow component be viewed on its own before it's wired
 // up to the real API.

@@ -1,27 +1,18 @@
 import { useState } from "react";
-import "./GroupCreation.css";
 
 /***********************************************************************
  * GroupCreation
  *
- * Allows a user to create an accountability group and displays the
- * generated invitation code after successful creation.
+ * Pop-up modal allowing a user to create an accountability group and
+ * displays the generated invitation code after successful creation.
+ * Follows the same modal styling as the habits forms.
  ***********************************************************************/
-function GroupCreation({ currentUserId })
+function GroupCreation({ currentUserId, onClose })
 {
   const [isCreating, setIsCreating] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  /***********************************************************************
-   * handleSubmit
-   *
-   * Handles submission of the group creation form. It collects and
-   * formats the entered group details, sends a request to the backend
-   * to create the group, and displays the generated invitation code
-   * when the group is created successfully. Any backend or connection
-   * errors are displayed to the user.
-   ***********************************************************************/
   const handleSubmit = async (event) =>
   {
     event.preventDefault();
@@ -71,60 +62,104 @@ function GroupCreation({ currentUserId })
   };
 
   return (
-    <main className="group-creation-page">
-      <section className="group-creation-card">
+    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="group-create-title"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <header className="modal-panel__header">
+          <h2 id="group-create-title">Create a Group</h2>
+          {onClose && (
+            <button
+              className="modal-panel__close"
+              type="button"
+              onClick={onClose}
+              disabled={isCreating}
+            >
+              ×
+            </button>
+          )}
+        </header>
 
         {invitationCode ? (
-          <div className="success-message" role="status">
-            <strong>Group created successfully.</strong>
-            <span>Your invitation code is:</span>
-            <span className="invitation-code">{invitationCode}</span>
-            <span>Share this code with the people you want to invite.</span>
+          <div className="modal-panel__body form">
+            <div className="success-message" role="status" style={{ textAlign: "center", padding: "1.25rem 0" }}>
+              <p><strong>Group created successfully.</strong></p>
+              <p style={{ marginTop: "0.5rem" }}>Your invitation code is:</p>
+              <p
+                className="invitation-code"
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  letterSpacing: "3px",
+                  margin: "0.75rem 0",
+                  color: "var(--olive-deep)",
+                }}
+              >
+                {invitationCode}
+              </p>
+              <p className="field-help">Share this code with the peers you want to invite.</p>
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn btn--primary" onClick={onClose}>
+                Done
+              </button>
+            </div>
           </div>
         ) : (
-          <>
-            <div className="group-creation-header">
-              <p className="group-creation-label">ACCOUNTABILITY GROUP</p>
-              <h1>Create a Group</h1>
-              <p>Create a group and invite your peers to work towards your goals together.</p>
-            </div>
+          <form onSubmit={handleSubmit} className="modal-panel__body form">
+            <p className="habit-row__desc">
+              Create a group and invite your peers to work towards your goals together.
+            </p>
 
-            <form onSubmit={handleSubmit} className="group-creation-form">
-              <div className="form-field">
-                <label htmlFor="groupName">Group Name</label>
-                <input id="groupName" name="groupName" maxLength={100} required />
-              </div>
+            <label className="field" htmlFor="groupName">
+              Group Name
+              <input id="groupName" name="groupName" maxLength={100} required autoFocus />
+            </label>
 
-              <div className="form-field">
-                <label htmlFor="description">Description</label>
-                <textarea id="description" name="description" rows={3} required />
-              </div>
+            <label className="field" htmlFor="description">
+              Description
+              <textarea id="description" name="description" rows={3} required />
+            </label>
 
-              <div className="form-field">
-                <label htmlFor="memberLimit">Maximum Members</label>
-                <select id="memberLimit" name="memberLimit" defaultValue="5">
-                  <option value="3">3 members</option>
-                  <option value="4">4 members</option>
-                  <option value="5">5 members</option>
-                </select>
-                <span className="field-help">
-                  Choose how many people can be part of this group.
-                </span>
-              </div>
+            <label className="field" htmlFor="memberLimit">
+              Maximum Members
+              <select id="memberLimit" name="memberLimit" defaultValue="5">
+                <option value="3">3 members</option>
+                <option value="4">4 members</option>
+                <option value="5">5 members</option>
+              </select>
+              <span className="field-help">
+                Choose how many people can be part of this group.
+              </span>
+            </label>
 
-              {errorMessage && (
-                <div className="message error-message" role="alert">{errorMessage}</div>
+            {errorMessage && (
+              <div className="form-error" role="alert">{errorMessage}</div>
+            )}
+
+            <div className="form-actions">
+              {onClose && (
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={onClose}
+                  disabled={isCreating}
+                >
+                  Cancel
+                </button>
               )}
-
-              <button type="submit" className="create-group-button" disabled={isCreating}>
+              <button type="submit" className="btn btn--primary" disabled={isCreating}>
                 {isCreating ? "Creating Group..." : "Create Group"}
               </button>
-            </form>
-          </>
+            </div>
+          </form>
         )}
-
       </section>
-    </main>
+    </div>
   );
 }
 

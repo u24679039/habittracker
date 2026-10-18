@@ -5,31 +5,38 @@ import React from 'react';
  * Renders a single-month calendar grid, shading each day by how many
  * habits were completed that day. `data` is a { 'YYYY-MM-DD': count } map,
  * as returned by AnalyticsService.getHabitDensityHeatmap.
+ *
+ * Scales dynamically depending on completed habits count vs total active habits.
+ * Static layout lives in tokens.css (.hf-heatmap*); only the per-day
+ * colour is computed here.
  */
-export default function StreakHeatmap({ month, data }) {
+export default function StreakHeatmap({ month, data = {}, totalHabits }) {
   const days = buildMonthGrid(month);
-  const maxCount = Math.max(1, ...Object.values(data));
+  // Scale against either total active habits, highest count in data, or at least 3 for smooth tiers
+  const maxCount = Math.max(totalHabits || 0, ...Object.values(data), 3);
 
   return (
     <div>
-      <div style={gridStyle}>
+      <div className="hf-heatmap">
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((label) => (
-          <div key={label} style={{ ...cellStyle, color: '#a89f94', fontSize: '0.7rem' }}>
+          <div key={label} className="hf-heatmap__cell hf-heatmap__label">
             {label}
           </div>
         ))}
         {days.map((day, idx) => {
-          if (!day) return <div key={`pad-${idx}`} style={cellStyle} />;
+          if (!day) return <div key={`pad-${idx}`} className="hf-heatmap__cell" />;
           const count = data[day.iso] || 0;
+          const ratio = count > 0 ? Math.min(1, count / maxCount) : 0;
+          const hasActivity = count > 0;
           return (
             <div
               key={day.iso}
+              className="hf-heatmap__cell"
               title={`${day.iso}: ${count} habit${count === 1 ? '' : 's'} completed`}
               style={{
-                ...cellStyle,
-                background: intensityColor(count, maxCount),
-                color: count / maxCount > 0.6 ? '#fff' : '#292420',
-                fontWeight: 500,
+                background: hasActivity ? intensityColor(count, maxCount) : 'var(--surface-sunken)',
+                color: hasActivity ? (ratio > 0.45 ? '#ffffff' : 'var(--olive-deep)') : 'var(--ink-faint)',
+                fontWeight: hasActivity ? 600 : 400,
               }}
             >
               {day.dayOfMonth}
@@ -63,33 +70,14 @@ function buildMonthGrid(month) {
 }
 
 /**
- * Maps a completed-habit count to a background color, scaling from a warm
- * neutral (0 completions) through increasingly saturated moss green up to
- * `maxCount` (the busiest day in the current dataset) - so the heatmap's
- * color scale is always relative to this specific month's data rather
- * than a fixed absolute scale. The hue/saturation (107°, ~30%) matches the
- * app's --hf-moss token, so "completed" reads consistently as the same
- * green everywhere it appears (progress bars, this heatmap), not two
- * unrelated shades that happen to both be called green.
+ * Maps a completed-habit count to a dynamic background colour.
+ * Scales dynamically from sand (0 completions) through lighter sage to deep olive
+ * based on the completion ratio against maxCount.
  */
 function intensityColor(count, maxCount) {
-  if (count === 0) return '#f1ede5';
+  if (!count || count <= 0) return '#ece8da'; // --surface-sunken (empty day)
   const ratio = Math.min(1, count / maxCount);
-  const lightness = 86 - ratio * 54;
-  return `hsl(107, 30%, ${lightness}%)`;
+  const lightness = Math.round(82 - ratio * 48);
+  const saturation = Math.round(26 + ratio * 24);
+  return `hsl(105, ${saturation}%, ${lightness}%)`;
 }
-
-const gridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(7, 1fr)',
-  gap: '4px',
-};
-
-const cellStyle = {
-  aspectRatio: '1 / 1',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderRadius: '6px',
-  fontSize: '0.75rem',
-};

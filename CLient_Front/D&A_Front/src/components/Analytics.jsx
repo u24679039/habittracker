@@ -2,17 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { analyticsApi } from '../api/dashboardApi';
 import StreakHeatmap from './StreakHeatmap';
-import '../styles/tokens.css';
+
+// Recharts draws SVG attributes, so it needs literal colours (kept in sync with tokens.css).
+const CHART_LINE = '#4a6040'; // --olive
+const CHART_GRID = '#ddd7c6'; // --line
+const CHART_TICK = '#5d6254'; // --ink-soft
 
 /**
  * Analytics
- * 
+ *
  * The Analytics page (Fig. 24): three summary stat cards, a weekly
  * "Execution Consistency" line chart, a monthly habit-density heatmap,
- * and a per-habit completion breakdown - plus CSV/PDF export buttons
- * matching the dashboard's design token styling and hover interactive states.
+ * and a per-habit completion breakdown - plus CSV/PDF export buttons.
+ *
+ * Styling lives in Main_Frontend/src/styles/tokens.css (hf- classes).
  */
-export default function Analytics({ userId }) {
+export default function Analytics({ userId, habitLogCount = 0 }) {
   // Compute active month and trailing 7-day window once per mount
   const month = new Date().toISOString().slice(0, 7);
   const weekAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -23,6 +28,7 @@ export default function Analytics({ userId }) {
   const [heatmap, setHeatmap] = useState(null);
   const [breakdown, setBreakdown] = useState(null);
   const [error, setError] = useState(null);
+  const [exportError, setExportError] = useState(null);
 
   useEffect(() => {
     // Guards against React race conditions on unmount or userId changes
@@ -30,18 +36,102 @@ export default function Analytics({ userId }) {
 
     async function load() {
       try {
-        // Fetch all analytics widget streams concurrently
-        const [summaryData, trendData, heatmapData, breakdownData] = await Promise.all([
+        // Fetch all analytics widget streams concurrently, along with live habits
+        const [summaryData, trendData, heatmapData, breakdownData, userHabits] = await Promise.all([
           analyticsApi.getSummary(userId),
           analyticsApi.getTrend(userId, weekAgo, today),
           analyticsApi.getHeatmap(userId, month),
           analyticsApi.getBreakdown(userId),
+          fetch(`/api/users/${userId}/habits?archived=false`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
         ]);
         if (cancelled) return;
-        setSummary(summaryData);
-        setTrend(trendData);
-        setHeatmap(heatmapData);
-        setBreakdown(breakdownData);
+
+        const habitsList = Array.isArray(userHabits) ? userHabits : [];
+
+        // Calculate today's active progress from habit records (e.g. increments)
+        const habitsToday = habitsList.map((h) => {
+          const target = h.targetValue || 1;
+          const curr = h.currValue || 0;
+          if (h.StatusOfHabit === 'COMPLETED' || h.StatusOfHabit === 'REST_DAY') return 100;
+          if (curr > 0) return Math.min(100, Math.round((curr / target) * 100));
+          return 0;
+        });
+        const activeTodayCount = habitsToday.filter((r) => r > 0).length;
+        const avgTodayRate = habitsToday.length > 0
+          ? Math.round(habitsToday.reduce((a, b) => a + b, 0) / habitsToday.length)
+          : 0;
+
+        // Enhanced Per-habit breakdown incorporating current logged increments
+        let finalBreakdown = Array.isArray(breakdownData) ? [...breakdownData] : [];
+        if (habitsList.length > 0) {
+          habitsList.forEach((h) => {
+            const target = h.targetValue || 1;
+            const curr = h.currValue || 0;
+            const rate = (h.StatusOfHabit === 'COMPLETED' || h.StatusOfHabit === 'REST_DAY')
+              ? 100
+              : curr > 0
+              ? Math.min(100, Math.round((curr / target) * 100))
+              : 0;
+
+            const existingIndex = finalBreakdown.findIndex((b) => b.habitName === h.title);
+            if (existingIndex >= 0) {
+              finalBreakdown[existingIndex].completionRate = Math.max(finalBreakdown[existingIndex].completionRate, rate);
+              finalBreakdown[existingIndex].status = h.StatusOfHabit || 'ACTIVE';
+            } else {
+              finalBreakdown.push({
+                habitName: h.title,
+                completionRate: rate,
+                status: h.StatusOfHabit || 'ACTIVE',
+              });
+            }
+          });
+        }
+
+        // Enhanced Heatmap: reflect today's activity if progress was logged
+        const finalHeatmap = { ...(heatmapData || {}) };
+        if (avgTodayRate > 0) {
+          finalHeatmap[today] = Math.max(finalHeatmap[today] || 0, activeTodayCount || 1);
+        }
+
+        // Enhanced Trend: pad all 7 days with 0 for missing dates
+        const trendMap = {};
+        if (Array.isArray(trendData)) {
+          trendData.forEach((item) => {
+            trendMap[item.date] = item.completionRate;
+          });
+        }
+        if (avgTodayRate > 0) {
+          trendMap[today] = Math.max(trendMap[today] || 0, avgTodayRate);
+        }
+
+        const paddedTrend = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+          const dateStr = d.toISOString().slice(0, 10);
+          paddedTrend.push({
+            date: dateStr,
+            completionRate: trendMap[dateStr] !== undefined ? trendMap[dateStr] : 0,
+          });
+        }
+
+        // Enhanced Summary stats
+        const finalSummary = { ...(summaryData || {}) };
+        if ((!finalSummary.avgCompletion || finalSummary.avgCompletion === 0) && avgTodayRate > 0) {
+          finalSummary.avgCompletion = avgTodayRate;
+        }
+        if ((!finalSummary.currentStreak || finalSummary.currentStreak === 0) && avgTodayRate > 0) {
+          finalSummary.currentStreak = 1;
+        }
+        if ((!finalSummary.highestStreak || finalSummary.highestStreak === 0) && avgTodayRate > 0) {
+          finalSummary.highestStreak = 1;
+        }
+
+        setSummary(finalSummary);
+        setTrend(paddedTrend);
+        setHeatmap(finalHeatmap);
+        setBreakdown(finalBreakdown);
       } catch (err) {
         if (!cancelled) setError(err.message);
       }
@@ -51,119 +141,202 @@ export default function Analytics({ userId }) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, weekAgo, today, month, habitLogCount]);
+
+  /**
+   * Downloads the CSV/PDF export. These use fetch() with the Authorization
+   * header (see downloadCsv/downloadPdf in dashboardApi.js) instead of a plain
+   * <a href>, because a normal link navigation can't send the auth header.
+   */
+  async function handleExport(kind) {
+    setExportError(null);
+    try {
+      if (kind === 'csv') await analyticsApi.downloadCsv(userId);
+      else await analyticsApi.downloadPdf(userId, month);
+    } catch (err) {
+      setExportError(err.message);
+    }
+  }
+
+  // Organize breakdown into active, rest day, and snoozed groups
+  const activeHabits = Array.isArray(breakdown)
+    ? breakdown.filter((h) => h.status !== 'REST_DAY' && h.status !== 'SNOOZED')
+    : [];
+  const restHabits = Array.isArray(breakdown)
+    ? breakdown.filter((h) => h.status === 'REST_DAY')
+    : [];
+  const snoozedHabits = Array.isArray(breakdown)
+    ? breakdown.filter((h) => h.status === 'SNOOZED')
+    : [];
 
   return (
     <div className="hf-page">
-      {/* Inline styles for export button hover utility */}
-      <style>{`
-        .hf-export-btn {
-          padding: 4px 10px;
-          font-size: 0.8rem;
-          background: #fff;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          cursor: pointer;
-          text-decoration: none;
-          color: #333;
-          transition: background 0.2s ease, border-color 0.2s ease;
-        }
-        .hf-export-btn:hover {
-          background: #f0f0f0;
-          border-color: #999;
-        }
-      `}</style>
-
       {/* Page Header with Export Buttons */}
-      <div className="hf-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div className="hf-page-header">
         <h1>Analytics</h1>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <a href={analyticsApi.exportCsvUrl(userId)} className="hf-export-btn">
+        <div className="hf-page-header__actions">
+          <button
+            type="button"
+            className="btn btn--outline btn--sm"
+            onClick={() => handleExport('csv')}
+          >
             Export CSV
-          </a>
-          <a href={analyticsApi.exportPdfUrl(userId, month)} className="hf-export-btn">
+          </button>
+          <button
+            type="button"
+            className="btn btn--outline btn--sm"
+            onClick={() => handleExport('pdf')}
+          >
             Export PDF
-          </a>
+          </button>
         </div>
       </div>
 
       {error && <div className="hf-error-banner">Couldn't load analytics: {error}</div>}
+      {exportError && <div className="hf-error-banner">Export failed: {exportError}</div>}
 
-      {/* Top Stat Cards Grid - Responsive auto-fit */}
-      <div className="hf-grid hf-grid--stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <StatCard label="Current streak" value={summary && `${summary.currentStreak} days`} />
-        <StatCard label="Highest streak" value={summary && `${summary.highestStreak} days`} />
-        <StatCard label="Avg completion" value={summary && `${summary.avgCompletion}%`} />
+      {/* Top Stat Cards - identical styling to dashboard */}
+      <div className="hf-grid hf-grid--stats">
+        <section className="hf-card hf-stat-card">
+          <p className="hf-stat-label">Current Streak</p>
+          <p className="hf-stat-value">
+            {summary ? summary.currentStreak : 0}{' '}
+            <span className="hf-stat-unit">{summary?.currentStreak === 1 ? 'DAY' : 'DAYS'}</span>
+          </p>
+        </section>
+
+        <section className="hf-card hf-stat-card">
+          <p className="hf-stat-label">Highest Streak</p>
+          <p className="hf-stat-value">
+            {summary ? summary.highestStreak : 0}{' '}
+            <span className="hf-stat-unit">{summary?.highestStreak === 1 ? 'DAY' : 'DAYS'}</span>
+          </p>
+        </section>
+
+        <section className="hf-card hf-stat-card">
+          <p className="hf-stat-label">Avg Completion</p>
+          <p className="hf-stat-value">
+            {summary ? summary.avgCompletion : 0}{' '}
+            <span className="hf-stat-unit">%</span>
+          </p>
+        </section>
       </div>
 
       {/* Execution Consistency Chart Section */}
-      <section className="hf-card" style={{ marginTop: 'var(--hf-space-4)' }}>
-        <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Execution consistency (last 7 days)</h3>
+      <section className="hf-card">
+        <h3 className="hf-section-gap" style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
+          Execution consistency (last 7 days)
+        </h3>
         {trend === null && !error && <p className="hf-empty-state">Loading trend...</p>}
-        {trend && trend.length === 0 && <p className="hf-empty-state">No logs yet this week.</p>}
-        {trend && trend.length > 0 && (
+        {trend && (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trend}>
-              <CartesianGrid stroke="#eee" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#666' }} tickFormatter={(d) => d.slice(5)} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#666' }} width={32} />
+              <CartesianGrid stroke={CHART_GRID} vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: CHART_TICK }} tickFormatter={(d) => d.slice(5)} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: CHART_TICK }} width={32} />
               <Tooltip formatter={(v) => `${v}%`} />
-              <Line type="monotone" dataKey="completionRate" stroke="#333" strokeWidth={2} dot={{ fill: '#333', r: 3 }} />
+              <Line
+                type="monotone"
+                dataKey="completionRate"
+                stroke={CHART_LINE}
+                strokeWidth={2}
+                dot={{ fill: CHART_LINE, r: 3 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
       </section>
 
-      {/* Two-Column Analytics Layout matching Dashboard Hero Card styling - Responsive auto-fit */}
-      <div className="hf-grid hf-analytics-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginTop: 'var(--hf-space-4)' }}>
-        
-        {/* Monthly Streak Heatmap Card */}
-        <section className="hf-hero-card">
-          <h3 style={{ marginTop: 0, fontSize: '1.1rem', marginBottom: '1rem' }}>Habit density heatmap</h3>
+      {/* Two-column layout: heatmap + per-habit breakdown (clean cards, no green-on-white nesting) */}
+      <div className="hf-grid hf-analytics-two-col">
+        <section className="hf-card">
+          <div className="hf-section-head">
+            <h3>Habit Density Heatmap</h3>
+          </div>
           {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
           {heatmap && (
-            <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', overflowX: 'auto' }}>
-              <StreakHeatmap month={month} data={heatmap} />
+            <div className="hf-heatmap-panel">
+              <StreakHeatmap month={month} data={heatmap} totalHabits={breakdown?.length || 0} />
             </div>
           )}
         </section>
 
-        {/* Per-Habit Breakdown Card */}
-        <section className="hf-hero-card">
-          <h3 style={{ marginTop: 0, fontSize: '1.1rem', marginBottom: '1rem' }}>Per-habit breakdown</h3>
+        <section className="hf-card">
+          <div className="hf-section-head">
+            <h3>Per-Habit Breakdown</h3>
+          </div>
           {breakdown === null && !error && <p className="hf-empty-state">Loading breakdown...</p>}
           {breakdown && breakdown.length === 0 && (
             <p className="hf-empty-state">No active habits to break down yet.</p>
           )}
-          {breakdown && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
-              {breakdown.map((habit) => (
-                <div key={habit.habitName} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 500, minWidth: '120px' }}>{habit.habitName}</span>
-                  <div className="hf-progress-track" style={{ flex: 1, minWidth: '120px', margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%`, background: '#333', height: '100%' }} />
+
+          {breakdown && breakdown.length > 0 && (
+            <div className="hf-breakdown-groups">
+              {/* Active habits section */}
+              <div className="hf-breakdown-section">
+                <h4 className="hf-breakdown-subhead">
+                  Active Habits <span>({activeHabits.length})</span>
+                </h4>
+                {activeHabits.length === 0 ? (
+                  <p className="hf-empty-note">No active habits today.</p>
+                ) : (
+                  <div className="hf-list">
+                    {activeHabits.map((habit) => (
+                      <div className="hf-list-item" key={habit.habitName}>
+                        <span className="hf-list-item__name">{habit.habitName}</span>
+                        <div className="hf-progress-track">
+                          <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+                        </div>
+                        <span className="hf-pct">{habit.completionRate}%</span>
+                      </div>
+                    ))}
                   </div>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)', minWidth: '35px', textAlign: 'right' }}>
-                    {habit.completionRate}%
-                  </span>
+                )}
+              </div>
+
+              {/* Rest Day section */}
+              {restHabits.length > 0 && (
+                <div className="hf-breakdown-section">
+                  <h4 className="hf-breakdown-subhead">
+                    Rest Day <span>({restHabits.length})</span>
+                  </h4>
+                  <div className="hf-list">
+                    {restHabits.map((habit) => (
+                      <div className="hf-list-item" key={habit.habitName}>
+                        <span className="hf-list-item__name">{habit.habitName}</span>
+                        <div className="hf-progress-track">
+                          <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+                        </div>
+                        <span className="hf-pct">{habit.completionRate}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* Snoozed section */}
+              {snoozedHabits.length > 0 && (
+                <div className="hf-breakdown-section">
+                  <h4 className="hf-breakdown-subhead">
+                    Snoozed <span>({snoozedHabits.length})</span>
+                  </h4>
+                  <div className="hf-list">
+                    {snoozedHabits.map((habit) => (
+                      <div className="hf-list-item" key={habit.habitName}>
+                        <span className="hf-list-item__name">{habit.habitName}</span>
+                        <div className="hf-progress-track">
+                          <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
+                        </div>
+                        <span className="hf-pct">{habit.completionRate}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </section>
       </div>
-    </div>
-  );
-}
-
-/**
- * Reusable Stat Card Component matching dashboard card layout style
- */
-function StatCard({ label, value }) {
-  return (
-    <div className="hf-card" style={{ padding: '1rem', textAlign: 'center' }}>
-      <p className="hf-stat-label" style={{ fontSize: '0.8rem', color: '#666', margin: '0 0 4px 0' }}>{label}</p>
-      <p className="hf-stat-value" style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: 0 }}>{value ?? '—'}</p>
     </div>
   );
 }

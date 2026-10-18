@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import "./App.css";
 
-function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked }) {
+function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked, loggedOut }) {
   const [page, setPage] = useState("login");
 
   const [loginData, setLoginData] = useState({
@@ -26,12 +25,24 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // When loggedOut changes or when user logs out from shell, reset internal page to login and clear profile
+  useEffect(() => {
+    if (loggedOut) {
+      setPage("login");
+      setProfile(null);
+      setFlaggedGroups([]);
+      setMessage("");
+    }
+  }, [loggedOut]);
+
   // Restore an existing session after refreshing the shared application.
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) {
       loadProfile(savedToken).finally(() => onSessionChecked?.());
     } else {
+      setPage("login");
+      setProfile(null);
       onSessionChecked?.();
     }
   }, []);
@@ -503,111 +514,102 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
   // ====================
 
   if (page === "profile" && profile) {
+    const initials = (profile.name || "U")
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
     return (
-      <div className="dashboard">
-        <header className="dashboard-header">
-          <div className="dashboard-brand">
-            <div className="small-logo">✓</div>
-
-            <div>
-              <h1>HabitTracker</h1>
-              <span>
-                Authentication, Security & Admin
-              </span>
-            </div>
-          </div>
-
-          <div className="auth-header-actions">
-            {onBackToDashboard && (
-              <button
-                type="button"
-                className="logout-button"
-                onClick={onBackToDashboard}
-              >
-                &larr; Back to Dashboard
-              </button>
-            )}
+      <div className="profile-page">
+        {onBackToDashboard && (
+          <div className="back-link" style={{ marginBottom: "1rem" }}>
             <button
               type="button"
-              className="logout-button"
-              onClick={handleLogout}
+              className="btn btn--outline btn--sm"
+              onClick={onBackToDashboard}
             >
-              Logout
+              ← Back to Dashboard
             </button>
           </div>
-        </header>
+        )}
 
-        <main className="dashboard-content">
+        <div className="profile-content">
           <div className="welcome-card">
-            <div>
-              <p className="welcome-label">
-                WELCOME BACK
-              </p>
-
-              <h2>{profile.name}</h2>
-
-              <p>
-                Manage your HabitTracker account and
-                security settings.
-              </p>
+            <div className="welcome-card__main">
+              <div className="welcome-avatar" aria-hidden="true">
+                {initials}
+              </div>
+              <div>
+                <p className="welcome-label">
+                  Your Account
+                </p>
+                <h2>{profile.name}</h2>
+                <p>
+                  {profile.email} • Manage your personal information and security settings.
+                </p>
+              </div>
             </div>
 
-            <div className="role-badge">
-              {profile.role}
+            <div className="welcome-card__side">
+              <span className="role-badge">
+                {profile.role || "MEMBER"}
+              </span>
             </div>
           </div>
 
           <div className="profile-grid">
             <section className="profile-card">
               <div className="card-heading">
-                <div className="card-icon">👤</div>
-
                 <div>
                   <h3>Profile Settings</h3>
-
                   <p>
-                    Update your personal account
-                    information.
+                    Update your personal account information.
                   </p>
                 </div>
               </div>
 
-              <form onSubmit={handleProfileUpdate}>
-                <label>Full name</label>
+              <form className="form form--stacked" onSubmit={handleProfileUpdate}>
+                <div className="field">
+                  <label htmlFor="profile-name">Full name</label>
+                  <input
+                    id="profile-name"
+                    type="text"
+                    name="name"
+                    value={profileForm.name}
+                    onChange={handleProfileChange}
+                    required
+                  />
+                </div>
 
-                <input
-                  type="text"
-                  name="name"
-                  value={profileForm.name}
-                  onChange={handleProfileChange}
-                  required
-                />
+                <div className="field">
+                  <label htmlFor="profile-email">Email address</label>
+                  <input
+                    id="profile-email"
+                    type="email"
+                    name="email"
+                    value={profileForm.email}
+                    onChange={handleProfileChange}
+                    required
+                  />
+                </div>
 
-                <label>Email address</label>
-
-                <input
-                  type="email"
-                  name="email"
-                  value={profileForm.email}
-                  onChange={handleProfileChange}
-                  required
-                />
-
-                <button
-                  className="primary-button"
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading
-                    ? "Saving..."
-                    : "Save Changes"}
-                </button>
+                <div style={{ marginTop: "0.5rem" }}>
+                  <button
+                    className="btn btn--primary"
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
               </form>
             </section>
 
             <section className="account-card">
               <div className="card-heading">
-                <div className="card-icon">🔒</div>
 
                 <div>
                   <h3>Account Security</h3>
@@ -622,7 +624,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
               <div className="account-information">
                 <div className="info-row">
                   <span>Account ID</span>
-                  <strong>#{profile.id}</strong>
+                  <strong>#{profile.userId ?? profile.id}</strong>
                 </div>
 
                 <div className="info-row">
@@ -641,17 +643,6 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 </div>
               </div>
 
-              <div className="security-box">
-                <strong>
-                  🔐 Role-Based Security
-                </strong>
-
-                <p>
-                  Protected API routes require a valid
-                  JWT. Administrator routes also
-                  require the ADMIN role.
-                </p>
-              </div>
             </section>
           </div>
 
@@ -660,7 +651,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
               <div className="admin-panel-header">
                 <div>
                   <p className="admin-label">
-                    ADMINISTRATOR
+                    Administrator
                   </p>
 
                   <h2>Moderation Panel</h2>
@@ -673,14 +664,14 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
 
                 <div className="admin-actions">
                   <button
-                    className="secondary-button"
+                    className="btn btn--outline"
                     onClick={handleFlagDemoGroup}
                   >
                     Flag Demo Group
                   </button>
 
                   <button
-                    className="primary-button"
+                    className="btn btn--primary"
                     onClick={loadFlaggedGroups}
                   >
                     Refresh Flags
@@ -732,14 +723,14 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                   </p>
                 </div>
               ) : (
-                <div className="group-list">
+                <div className="admin-group-list">
                   {flaggedGroups.map((group) => (
                     <div
-                      className="group-item"
+                      className="admin-group-item"
                       key={group.id}
                     >
-                      <div className="group-details">
-                        <div className="group-title-row">
+                      <div className="admin-group-details">
+                        <div className="admin-group-title-row">
                           <h3>{group.name}</h3>
 
                           <span
@@ -750,8 +741,8 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                             }
                           >
                             {group.reviewed
-                              ? "REVIEWED"
-                              : "PENDING"}
+                              ? "Reviewed"
+                              : "Pending"}
                           </span>
                         </div>
 
@@ -766,10 +757,10 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                         </small>
                       </div>
 
-                      <div className="group-actions">
+                      <div className="admin-group-actions">
                         {!group.reviewed && (
                           <button
-                            className="review-button"
+                            className="btn btn--outline btn--sm"
                             onClick={() =>
                               handleReviewGroup(
                                 group.id
@@ -781,7 +772,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                         )}
 
                         <button
-                          className="remove-button"
+                          className="btn btn--danger btn--sm"
                           onClick={() =>
                             handleRemoveGroup(
                               group.id
@@ -799,7 +790,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
           )}
 
           {message && (
-            <div className="dashboard-message">
+            <div className="alert">
               {message}
             </div>
           )}
@@ -815,14 +806,14 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             </div>
 
             <button
-              className="delete-button"
+              className="btn btn--danger"
               onClick={handleDeleteAccount}
               disabled={loading}
             >
               Delete Account
             </button>
           </section>
-        </main>
+        </div>
       </div>
     );
   }
@@ -835,7 +826,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
     <div className="auth-app">
       <div className="auth-container">
         <div className="brand-section">
-          <div className="logo">✓</div>
+          <div className="auth-logo">✓</div>
 
           <h1>HabitTracker</h1>
 
@@ -847,17 +838,14 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             Reach your goals.
           </p>
 
-          <div className="security-note">
-            🔒 Secure account authentication
-          </div>
         </div>
 
         <div className="form-section">
-          <div className="tabs">
+          <div className="segmented">
             <button
               className={
                 page === "login"
-                  ? "active-tab"
+                  ? "is-active"
                   : ""
               }
               onClick={() => {
@@ -871,7 +859,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             <button
               className={
                 page === "register"
-                  ? "active-tab"
+                  ? "is-active"
                   : ""
               }
               onClick={() => {
@@ -887,11 +875,11 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             <>
               <h2>Welcome back</h2>
 
-              <p className="subtitle">
+              <p className="auth-subtitle">
                 Sign in to continue to HabitTracker.
               </p>
 
-              <form onSubmit={handleLogin}>
+              <form className="form form--stacked" onSubmit={handleLogin}>
                 <label>Email address</label>
 
                 <input
@@ -915,7 +903,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 />
 
                 <button
-                  className="primary-button"
+                  className="btn btn--primary"
                   type="submit"
                   disabled={loading}
                 >
@@ -929,11 +917,11 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             <>
               <h2>Create account</h2>
 
-              <p className="subtitle">
+              <p className="auth-subtitle">
                 Start tracking your habits today.
               </p>
 
-              <form onSubmit={handleRegister}>
+              <form className="form form--stacked" onSubmit={handleRegister}>
                 <label>Full name</label>
 
                 <input
@@ -968,7 +956,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 />
 
                 <button
-                  className="primary-button"
+                  className="btn btn--primary"
                   type="submit"
                   disabled={loading}
                 >
@@ -981,14 +969,10 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
           )}
 
           {message && (
-            <div className="message">
+            <div className="alert">
               {message}
             </div>
           )}
-
-          <div className="footer-text">
-            Authentication, Security & Admin
-          </div>
         </div>
       </div>
     </div>

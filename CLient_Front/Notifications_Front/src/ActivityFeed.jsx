@@ -7,7 +7,6 @@
 
 import React from "react";
 import { formatRelativeTime, getInitials } from "./feedDisplayHelpers";
-import "./ActivityFeed.css";
 
 // Allow component be viewed on its own before it's wired
 // up to the real API.
@@ -63,7 +62,7 @@ function ActivityFeed({ entries = MOCK_FEED_ENTRIES, title = "Group Activity" })
               <div className="activity-feed__content">
                 <p className="activity-feed__message">
                   {entry.type === "milestone" && (
-                    <span className="activity-feed__badge">🔥 Milestone</span>
+                    <span className="activity-feed__badge">Milestone</span>
                   )}
                   {entry.message}
                 </p>
