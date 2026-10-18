@@ -39,8 +39,8 @@ async function flagGroup(groupId, reason) {
     where: { groupId: id },
     data: {
       isPublic: false, // or set your schema's flag field
-      flagReason: reason,
-      reviewed: false
+      // flagReason: reason,
+      // reviewed: false
     }
   });
 

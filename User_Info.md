@@ -10,11 +10,11 @@ These accounts are created with raw string placeholders for their password hashe
 
 | Name | Role | Email | Password | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| **Demo Student** | `USER` | `demo@habitforge.test` | `seed-only` | Primary demo user (`userId = 1`) |
-| **Alex Rivera** | `USER` | `alex@habitforge.test` | `seed-only` | Member of Alpha Squad |
-| **Jordan Kim** | `USER` | `jordan@habitforge.test` | `seed-only` | Member of Alpha Squad |
+| **Demo Student** | `USER` | `demo@habitforge.test` | `demo1` | Primary demo user (`userId = 1`) |
+| **Alex Rivera** | `USER` | `alex@habitforge.test` | `demo2` | Member of Alpha Squad |
+| **Jordan Kim** | `USER` | `jordan@habitforge.test` | `demo3` | Member of Alpha Squad |
 
-*Note: Because `passwordHash` is populated with `'seed-only'` directly without bcrypt hashing, these accounts may not pass standard hashed-password authentication checks unless bypasses exist in your backend.*
+
 
 ---
 
