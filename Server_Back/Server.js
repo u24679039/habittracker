@@ -124,8 +124,8 @@ app.use((err, req, res, next) => {
 // ---------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------
-const PORT = process.env.PORT || 3000;
-
+const PORT = process.env.PORT || 5174;
+ 
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`HabitForge server running on http://localhost:${PORT}`);

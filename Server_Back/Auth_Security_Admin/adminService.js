@@ -1,33 +1,33 @@
 // Temporary group data for the independent Admin demo.
 // This will later be integrated with the team's Micro-Group database model.
 
-const groups = [
-  {
-    id: 1,
-    name: "Morning Runners",
-    flagged: false,
-    flagReason: null,
-    reviewed: false
-  },
-  {
-    id: 2,
-    name: "Study Together",
-    flagged: false,
-    flagReason: null,
-    reviewed: false
-  }
-];
-
+// const groups = [
+//   {
+//     id: 1,
+//     name: "Morning Runners",
+//     flagged: false,
+//     flagReason: null,
+//     reviewed: false
+//   },
+//   {
+//     id: 2,
+//     name: "Study Together",
+//     flagged: false,
+//     flagReason: null,
+//     reviewed: false
+//   }
+// ];
+const prisma = require("../prisma/client");
 // ====================
 // Flag Group
 // ====================
 
-function flagGroup(groupId, reason) {
+async function flagGroup(groupId, reason) {
   const id = Number(groupId);
 
-  const group = groups.find(
-    (currentGroup) => currentGroup.id === id
-  );
+  const group = await prisma.accountabilityGroup.findUnique({
+    where: { groupId: id }
+  });
 
   if (!group) {
     return {
@@ -35,38 +35,55 @@ function flagGroup(groupId, reason) {
       message: "Group not found."
     };
   }
-
-  group.flagged = true;
-  group.flagReason = reason || "No reason supplied";
-  group.reviewed = false;
+  const updatedGroup = await prisma.accountabilityGroup.update({
+    where: { groupId: id },
+    data: {
+      isPublic: false, // or set your schema's flag field
+      flagReason: reason,
+      reviewed: false
+    }
+  });
 
   return {
     success: true,
     message: "Group flagged successfully.",
-    group: group
+    group: updatedGroup
   };
+  // group.flagged = true;
+  // group.flagReason = reason || "No reason supplied";
+  // group.reviewed = false;
+
+  // return {
+  //   success: true,
+  //   message: "Group flagged successfully.",
+  //   group: group
+  // };
 }
 
 // ====================
 // Get Flagged Groups
 // ====================
 
-function getFlaggedGroups() {
-  return groups.filter(
-    (group) => group.flagged === true
-  );
-}
+async function getFlaggedGroups() {
+  const flaggedGroups = await prisma.accountabilityGroup.findMany({
+  where: { isPublic: false }
+  });
 
+  return {
+    success: true,
+    groups: flaggedGroups
+  };
+}
 // ====================
 // Review Flagged Group
 // ====================
 
-function reviewFlaggedGroup(groupId) {
+async function reviewFlaggedGroup(groupId) {
   const id = Number(groupId);
 
-  const group = groups.find(
-    (currentGroup) => currentGroup.id === id
-  );
+  const group = await prisma.accountabilityGroup.findUnique({
+    where: { groupId: id }
+  });
 
   if (!group) {
     return {
@@ -82,7 +99,13 @@ function reviewFlaggedGroup(groupId) {
     };
   }
 
-  group.reviewed = true;
+ const updatedGroup = await prisma.accountabilityGroup.update({
+    where: { groupId: id },
+    data: {
+      isPublic: true,
+      reviewed:true
+    }
+  });
 
   return {
     success: true,
@@ -95,36 +118,9 @@ function reviewFlaggedGroup(groupId) {
 // Remove Group
 // ====================
 
-function removeGroup(groupId) {
-  const id = Number(groupId);
-
-  const groupIndex = groups.findIndex(
-    (group) => group.id === id
-  );
-
-  if (groupIndex === -1) {
-    return {
-      success: false,
-      message: "Group not found."
-    };
-  }
-
-  const removedGroup = groups.splice(
-    groupIndex,
-    1
-  )[0];
-
-  return {
-    success: true,
-    message: "Group removed successfully.",
-    group: removedGroup
-  };
-}
 
 module.exports = {
   flagGroup,
   getFlaggedGroups,
-  reviewFlaggedGroup,
-  removeGroup,
-  groups
+  reviewFlaggedGroup
 };
