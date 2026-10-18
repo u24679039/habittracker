@@ -1,3 +1,4 @@
+/*HT_Client_Front*/
 import { useEffect, useState } from 'react';
 
 const API_URL = 'http://localhost:3000/api';
@@ -18,7 +19,7 @@ function todayAsInputValue() {
 }
 
 /** Renders the habit dashboard and manages its forms and API requests. */
-export default function App({ currentUserId }) {
+export default function App({ currentUserId, onHabitLogged }) {
   const [userId, setUserId] = useState('');
   const [habits, setHabits] = useState([]);
   const [habitView, setHabitView] = useState('active');
@@ -83,6 +84,7 @@ async function logRestDay(habit) {
     throw new Error(errorData.error||'Could not log rest day.');
     }
     await loadHabits();
+    onHabitLogged?.();
   } catch (requestError) {
     setError(requestError.message);
   }
@@ -103,6 +105,7 @@ async function logSnoozeDay(habit) {
       throw new Error(errorData.error || 'Could not log snooze day.');
     }
     await loadHabits();
+    onHabitLogged?.();
   } catch (requestError) {
     setError(requestError.message);
   }
@@ -238,6 +241,7 @@ async function logSnoozeDay(habit) {
       const data = await response.json();
       closeIncrementModal();
       await loadHabits();
+      onHabitLogged?.();
       //Check if target is met; open completion modal if true
       if(data.currValue>=data.targetValue){
         openLogModal({ ...incrementingHabit,currValue: data.currValue});
@@ -298,6 +302,7 @@ async function logSnoozeDay(habit) {
 
       setLoggingHabit(null);
       await loadHabits();
+      onHabitLogged?.();
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -383,50 +388,123 @@ async function logSnoozeDay(habit) {
 
       {!loading && habits.length > 0 && (
         <div className="habit-list">
-          {habits.map((habit) => (
-            <article className="habit-row" key={habit.habitId}>
-              <div>
-                <h2 className="habit-row__title">{habit.title}</h2>
-                {habit.description && <p className="habit-row__desc">{habit.description}</p>}
-                <p className="habit-row__meta">
-                  {habit.targetValue} {habit.targetUnit} · {habit.frequency.toLowerCase()}
-                </p>
-              </div>
-              <div className="habit-row__actions">
-  <div className="habit-row__actions-primary">
-    {habitView === 'active' && (
-    <button className="btn btn--primary" type="button" onClick={() => openIncrementModal(habit)}>
-      Log increment
-    </button>
-  )}
-    <button className="btn btn--ghost" type="button" onClick={() => openEditModal(habit)}>
-      Edit
-    </button>
-    {habitView === 'active' && (
-      <button className="btn btn--danger" type="button" onClick={() => archiveHabit(habit)}>
-        Archive
-      </button>
-    )}
-    {habitView === 'archived' && (
-      <button className="btn btn--primary" type="button" onClick={() => unarchiveHabit(habit)}>
-        Unarchive
-      </button>
-    )}
-  </div>
+          {habits.map((habit) => {
+            const status = habit.StatusOfHabit;
+            const isCompleted = status === 'COMPLETED';
+            const isSnoozed   = status === 'SNOOZED';
+            const isRestDay   = status === 'REST_DAY';
 
-  {habitView === 'active' && (
-    <div className="habit-row__actions-secondary">
-      <button className="btn btn--rest" type="button" onClick={() => logRestDay(habit)}>
-    Log Rest Day
-  </button>
-  <button className="btn btn--snooze" type="button" onClick={() => logSnoozeDay(habit)}>
-    Log Snooze Day
-      </button>
-    </div>
-  )}
-</div>
-            </article>
-          ))}
+            return (
+              <article className="group-card habit-card" key={habit.habitId}>
+                <div className="group-card-header">
+                  <div className="habit-card-title-group">
+                    <h3>{habit.title}</h3>
+                    <span className="habit-meta-text">
+                      {habit.targetValue} {habit.targetUnit} · {habit.frequency.toLowerCase()}
+                    </span>
+                  </div>
+
+                  <div className="habit-card-status">
+                    {isCompleted && (
+                      <span className="habit-status-badge habit-status-badge--completed">✓ Logged today</span>
+                    )}
+                    {isSnoozed && (
+                      <span className="habit-status-badge habit-status-badge--snoozed">⏰ Snoozed</span>
+                    )}
+                    {isRestDay && (
+                      <span className="habit-status-badge habit-status-badge--rest">🛌 Rest day</span>
+                    )}
+                    {!isCompleted && !isSnoozed && !isRestDay && habitView === 'active' && (
+                      <span className="habit-status-badge habit-status-badge--active">● Active</span>
+                    )}
+                  </div>
+                </div>
+
+                {habit.description && (
+                  <p className="group-description">{habit.description}</p>
+                )}
+
+                <div className="group-card-meta">
+                  <div className="group-code-actions">
+                    {habit.currValue !== undefined && habit.currValue !== null && habit.currValue > 0 && (
+                      <span className="invite-code">
+                        Progress: <strong>{habit.currValue} / {habit.targetValue} {habit.targetUnit}</strong>
+                      </span>
+                    )}
+
+                    {habitView === 'active' && (
+                      <>
+                        <button
+                          type="button"
+                          className="small-action-button small-action-button--primary"
+                          onClick={() => openIncrementModal(habit)}
+                          disabled={isCompleted}
+                          title={isCompleted ? 'Already logged today' : undefined}
+                        >
+                          {isCompleted ? '✓ Done' : '+ Log Increment'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`small-action-button ${isRestDay ? 'small-action-button--active' : ''}`}
+                          onClick={() => logRestDay(habit)}
+                          disabled={isCompleted}
+                          title={isCompleted ? 'Already logged today' : isRestDay ? 'Rest day active' : 'Log rest day'}
+                        >
+                          {isRestDay ? 'Resting' : 'Rest Day'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`small-action-button ${isSnoozed ? 'small-action-button--active' : ''}`}
+                          onClick={() => logSnoozeDay(habit)}
+                          disabled={isCompleted}
+                          title={isCompleted ? 'Already logged today' : isSnoozed ? 'Already snoozed' : 'Snooze habit'}
+                        >
+                          {isSnoozed ? 'Snoozed' : 'Snooze'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="small-action-button"
+                          onClick={() => openEditModal(habit)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="small-action-button small-action-button--danger"
+                          onClick={() => archiveHabit(habit)}
+                        >
+                          Archive
+                        </button>
+                      </>
+                    )}
+
+                    {habitView === 'archived' && (
+                      <>
+                        <button
+                          type="button"
+                          className="small-action-button small-action-button--primary"
+                          onClick={() => unarchiveHabit(habit)}
+                        >
+                          Unarchive
+                        </button>
+                        <button
+                          type="button"
+                          className="small-action-button"
+                          onClick={() => openEditModal(habit)}
+                        >
+                          Edit
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
 

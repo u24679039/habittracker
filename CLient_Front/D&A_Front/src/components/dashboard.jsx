@@ -15,7 +15,7 @@ import StreakHeatmap from './StreakHeatmap';
  *
  * Styling lives in Main_Frontend/src/styles/tokens.css (hf- classes).
  */
-export default function Dashboard({ userId, onNavigate }) {
+export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
   // Compute active month string (YYYY-MM) for calendar/heatmap utilities
   const month = new Date().toISOString().slice(0, 7);
 
@@ -62,7 +62,7 @@ export default function Dashboard({ userId, onNavigate }) {
     return () => {
       cancelled = true;
     };
-  }, [userId, month]);
+  }, [userId, month, habitLogCount]);
 
   // --- DYNAMIC DATA CALCULATIONS ---
   const progressEntries = progress ? Object.entries(progress) : [];
@@ -133,16 +133,47 @@ export default function Dashboard({ userId, onNavigate }) {
 
               <div className="hf-habit-actions">
                 <span className="hf-pct">{completionRate}%</span>
-                <button type="button" className="btn btn--outline btn--sm">Snooze</button>
-                <button type="button" className="btn btn--primary btn--sm">Log</button>
+                <button
+                  type="button"
+                  className="btn btn--outline btn--sm"
+                  onClick={() => onNavigate && onNavigate('habits')}
+                >
+                  Snooze
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm"
+                  onClick={() => onNavigate && onNavigate('habits')}
+                >
+                  Log
+                </button>
               </div>
             </div>
           ))}
 
           <div className="hf-chip-row">
-            <span className="hf-chip">Snooze (1)</span>
-            <span className="hf-chip">Rest Day Mode</span>
-            <span className="hf-link-action">+ Add Habit</span>
+            <span
+              className="hf-chip"
+              style={{ cursor: 'pointer' }}
+              onClick={() => onNavigate && onNavigate('habits')}
+              title="View snoozed habits"
+            >
+              Snooze
+            </span>
+            <span
+              className="hf-chip"
+              style={{ cursor: 'pointer' }}
+              onClick={() => onNavigate && onNavigate('habits')}
+              title="Log a rest day"
+            >
+              Rest Day Mode
+            </span>
+            <span
+              className="hf-link-action"
+              onClick={() => onNavigate && onNavigate('habits')}
+            >
+              + Add Habit
+            </span>
           </div>
         </section>
 

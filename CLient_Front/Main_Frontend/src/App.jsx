@@ -16,12 +16,23 @@ const PROFILE_PAGE = "Profile & Settings";
  * Notifications dropdown. Opens on hover (mouse only) or click/tap, and closes
  * on Escape or an outside click. Pass `items` as [{ id, message, time }] once a
  * notification source exists; with none it shows the empty state.
+ * Pass `unreadCount` for the count badge, and `onOpen` to clear the unread count
+ * when the panel is opened.
  */
-function NotificationsMenu({ items = [] }) {
+function NotificationsMenu({ items = [], unreadCount = 0, onOpen }) {
   const [hovering, setHovering] = useState(false);
   const [pinned, setPinned] = useState(false);
   const ref = useRef(null);
   const open = hovering || pinned;
+
+  // Call onOpen whenever the panel opens so the parent can reset the unread count.
+  const prevOpen = useRef(false);
+  useEffect(() => {
+    if (open && !prevOpen.current && onOpen) {
+      onOpen();
+    }
+    prevOpen.current = open;
+  }, [open, onOpen]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -61,8 +72,27 @@ function NotificationsMenu({ items = [] }) {
         aria-expanded={open}
         onClick={() => setPinned((value) => !value)}
       >
-        Notifications
-        {items.length > 0 && <span className="notif__dot" aria-hidden="true" />}
+        {/* Bell SVG icon */}
+        <svg
+          className="notif__bell-icon"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        {unreadCount > 0 && (
+          <span className="notif__count" aria-label={`${unreadCount} unread notifications`}>
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
       </button>
 
       {open && (
@@ -97,6 +127,31 @@ function App() {
     () => Boolean(localStorage.getItem("token"))
   );
   const [activeGroup, setActiveGroup] = useState(null);
+
+  // --- Fix 1: Notification state ---
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  /** Prepends a new notification and increments the unread counter. */
+  function addNotification(message) {
+    setNotifications((prev) => [
+      { id: Date.now(), message, time: new Date().toLocaleTimeString() },
+      ...prev,
+    ]);
+    setUnreadCount((prev) => prev + 1);
+  }
+
+  /** Resets the unread counter when the notification panel is opened. */
+  function clearUnread() {
+    setUnreadCount(0);
+  }
+
+  // --- Fix 2: habitLogCount for reactive Dashboard/Analytics refresh ---
+  const [habitLogCount, setHabitLogCount] = useState(0);
+
+  function incrementHabitLogCount() {
+    setHabitLogCount((prev) => prev + 1);
+  }
 
   useEffect(() => {
     sessionStorage.setItem("habitTrackerPage", currentPage);
@@ -144,7 +199,11 @@ function App() {
           </nav>
 
           <div className="header-actions">
-            <NotificationsMenu />
+            <NotificationsMenu
+              items={notifications}
+              unreadCount={unreadCount}
+              onOpen={clearUnread}
+            />
 
             <button
               type="button"
@@ -177,6 +236,7 @@ function App() {
           currentPage === "Dashboard" ? (
             <Dashboard
               userId={currentUserId}
+              habitLogCount={habitLogCount}
               onNavigate={(page) => {
                 const destinations = {
                   dashboard: "Dashboard",
@@ -188,7 +248,10 @@ function App() {
               }}
             />
           ) : currentPage === "Habits" ? (
-            <HabitManagement currentUserId={currentUserId} />
+            <HabitManagement
+              currentUserId={currentUserId}
+              onHabitLogged={incrementHabitLogCount}
+            />
           ) : currentPage === "Groups" ? (
             activeGroup ? (
               <div className="subpage">
@@ -203,6 +266,7 @@ function App() {
                 <GroupActivityPage
                   groupId={activeGroup.groupId}
                   groupName={activeGroup.groupName}
+                  onNotify={addNotification}
                 />
               </div>
             ) : (
@@ -212,7 +276,7 @@ function App() {
               />
             )
           ) : currentPage === "Analytics" ? (
-            <Analytics userId={currentUserId} />
+            <Analytics userId={currentUserId} habitLogCount={habitLogCount} />
           ) : (
             <>
               <h1 className="page-title">{currentPage}</h1>

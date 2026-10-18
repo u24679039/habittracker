@@ -17,7 +17,7 @@ const CHART_TICK = '#5d6254'; // --ink-soft
  *
  * Styling lives in Main_Frontend/src/styles/tokens.css (hf- classes).
  */
-export default function Analytics({ userId }) {
+export default function Analytics({ userId, habitLogCount = 0 }) {
   // Compute active month and trailing 7-day window once per mount
   const month = new Date().toISOString().slice(0, 7);
   const weekAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -56,7 +56,7 @@ export default function Analytics({ userId }) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, weekAgo, today, month, habitLogCount]);
 
   return (
     <div className="hf-page">

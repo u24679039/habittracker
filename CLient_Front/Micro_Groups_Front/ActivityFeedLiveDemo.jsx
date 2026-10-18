@@ -31,7 +31,7 @@ const INITIAL_ENTRIES = [
   },
 ];
 
-function ActivityFeedLiveDemo() {
+function ActivityFeedLiveDemo({ onNotify }) {
   const [entries, setEntries] = useState(INITIAL_ENTRIES);
   const [streak, setStreak] = useState(6); // one below a milestone, on purpose
 
@@ -57,6 +57,11 @@ function ActivityFeedLiveDemo() {
         message: `Monal just hit a ${newStreak}-day streak!`,
         timestamp: new Date(),
       });
+    }
+
+    // Notify the app shell for each new entry so the bell icon lights up.
+    if (onNotify) {
+      newEntries.forEach((entry) => onNotify(entry.message));
     }
 
     // Both the feed AND the toast read from this same "entries" state
