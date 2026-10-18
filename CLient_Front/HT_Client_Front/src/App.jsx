@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
+const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
 
 const emptyHabit = {
   title: '',
@@ -28,6 +29,11 @@ export default function App({ currentUserId }) {
   const [editingHabit, setEditingHabit] = useState(null);
   const [form, setForm] = useState(emptyHabit);
   const [isSaving, setIsSaving] = useState(false);
+  const [sharingMode, setSharingMode] = useState('PRIVATE');
+  const [sharedGroupIds, setSharedGroupIds] = useState([]);
+  const [sharingGroups, setSharingGroups] = useState([]);
+  const [sharingLoading, setSharingLoading] = useState(false);
+  const [sharingReady, setSharingReady] = useState(false);
   const [loggingHabit, setLoggingHabit] = useState(null);
   const [logForm, setLogForm] = useState({ date: todayAsInputValue(), value: '', note: '' });
   const [isLogging, setIsLogging] = useState(false);
@@ -133,9 +139,55 @@ async function logSnoozeDay(habit) {
     await loadHabits(view);
   }
 
+  // Load group memberships and, when editing, the saved sharing preferences.
+  useEffect(() => {
+    if (!isFormOpen || !currentUserId) return;
+    let cancelled = false;
+    setSharingLoading(true);
+    setSharingReady(false);
+    setError('');
+
+    async function loadSharing() {
+      try {
+        const groupResponse = await fetch(`${API_URL}/groups/user/${currentUserId}`, {
+          headers: authHeaders(),
+        });
+        if (!groupResponse.ok) throw new Error('Could not load your groups.');
+        const memberships = await groupResponse.json();
+        const groups = memberships.filter(m => m.group).map(m => ({
+          groupId: m.group.groupId,
+          name: m.group.name,
+        }));
+
+        let preferences = { sharingMode: 'PRIVATE', sharedGroupIds: [] };
+        if (editingHabit) {
+          const response = await fetch(`${API_URL}/habits/${editingHabit.habitId}/sharing`, {
+            headers: authHeaders(),
+          });
+          if (!response.ok) throw new Error('Could not load habit sharing settings.');
+          preferences = await response.json();
+        }
+        if (!cancelled) {
+          setSharingGroups(groups);
+          setSharingMode(preferences.sharingMode);
+          setSharedGroupIds(preferences.sharedGroupIds || []);
+          setSharingReady(true);
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setSharingLoading(false);
+      }
+    }
+    loadSharing();
+    return () => { cancelled = true; };
+  }, [isFormOpen, editingHabit?.habitId, currentUserId]);
+
   /** Opens an empty form for creating a habit. */
   function openCreateModal() {
     setForm(emptyHabit);
+    setSharingMode('PRIVATE');
+    setSharedGroupIds([]);
     setEditingHabit(null);
     setError('');
     setIsFormOpen(true);
@@ -204,7 +256,27 @@ async function logSnoozeDay(habit) {
 
       if (!response.ok) throw new Error(`Could not ${isEditing ? 'update' : 'create'} the habit.`);
 
-      closeFormModal();
+      const saved = isEditing ? null : await response.json();
+      const habitId = isEditing ? editingHabit.habitId : saved.habit?.habitId;
+      if (!habitId) throw new Error('Habit saved, but the new habit ID was not returned.');
+
+      const sharingResponse = await fetch(`${API_URL}/habits/${habitId}/sharing`, {
+        method: 'PUT',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sharingMode,
+          sharedGroupIds: sharingMode === 'SELECTED' ? sharedGroupIds : [],
+        }),
+      });
+      if (!sharingResponse.ok) {
+        // Keep the dialog open so the user knows the sharing setting was not saved.
+        // New habits are private by database default until sharing succeeds.
+        if (!isEditing) setEditingHabit({ habitId });
+        throw new Error('Habit saved, but sharing preferences were not saved. Please retry.');
+      }
+
+      setIsFormOpen(false);
+      setEditingHabit(null);
       await loadHabits();
     } catch (requestError) {
       setError(requestError.message);
@@ -484,13 +556,37 @@ async function logSnoozeDay(habit) {
                 </select>
               </label>
 
+              <fieldset className="field" disabled={isSaving || sharingLoading}>
+                <legend>Share habit activity with</legend>
+                <label><input type="radio" name="sharingMode" value="PRIVATE"
+                  checked={sharingMode === 'PRIVATE'} onChange={() => setSharingMode('PRIVATE')} /> None (private)</label>
+                <label><input type="radio" name="sharingMode" value="ALL"
+                  checked={sharingMode === 'ALL'} onChange={() => setSharingMode('ALL')} /> All my groups</label>
+                <label><input type="radio" name="sharingMode" value="SELECTED"
+                  checked={sharingMode === 'SELECTED'} onChange={() => setSharingMode('SELECTED')} /> Selected groups</label>
+                {sharingMode === 'SELECTED' && (
+                  <div>
+                    {sharingGroups.length === 0 && <p>You haven't joined any groups yet.</p>}
+                    {sharingGroups.map(group => (
+                      <label key={group.groupId} style={{ display: 'block' }}>
+                        <input type="checkbox" checked={sharedGroupIds.includes(group.groupId)}
+                          onChange={event => setSharedGroupIds(ids => event.target.checked
+                            ? [...new Set([...ids, group.groupId])]
+                            : ids.filter(id => id !== group.groupId))} /> {group.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {sharingLoading && <p>Loading sharing preferences…</p>}
+              </fieldset>
+
               {error && <p className="form-error">{error}</p>}
 
               <div className="form-actions">
                 <button className="btn btn--ghost" type="button" onClick={closeFormModal} disabled={isSaving}>
                   Cancel
                 </button>
-                <button className="btn btn--primary" type="submit" disabled={isSaving}>
+                <button className="btn btn--primary" type="submit" disabled={isSaving || !sharingReady || (sharingMode === 'SELECTED' && sharedGroupIds.length === 0)}>
                   {isSaving ? 'Saving…' : editingHabit ? 'Save changes' : 'Create habit'}
                 </button>
               </div>

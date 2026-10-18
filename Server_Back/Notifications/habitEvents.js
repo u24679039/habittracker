@@ -1,7 +1,7 @@
-
 const prisma = require("../prisma/client");
 const Habit = require("../HabitTracking/Habit");
 const { checkForMilestone, buildMilestoneMessage } = require("./milestoneService");
+const { getSharedGroupIds } = require("../HabitSharing/habitSharingService");
 
 // Records habit completion and checks whether a streak milestone was reached.
 async function recordHabitCompletion(habitId, completedAt = new Date()) {
@@ -9,13 +9,8 @@ async function recordHabitCompletion(habitId, completedAt = new Date()) {
         const habit = await prisma.habit.findUnique({ where: { habitId } });
         if (!habit) return;
 
-        const memberships = await prisma.groupMembership.findMany({
-            where: { userId: habit.userId },
-            select: { groupId: true }
-        });
-        if (!memberships.length) return;
-
-        const groupIds = [...new Set(memberships.map(m => m.groupId))];
+        const groupIds = await getSharedGroupIds(habit);
+        if (!groupIds.length) return;
 
         // Existing functionality: record the completed habit.
         await prisma.activity.createMany({
