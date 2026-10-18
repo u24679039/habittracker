@@ -146,7 +146,8 @@ model AccountabilityGroup {
   createdAt   DateTime @default(now()) @map("created_at")
   isPublic    Boolean  @default(false) @map("is_public")
   isActive    Boolean  @default(true) @map("is_active")
-
+  flagReason  String
+  reviewed    Boolean  @default(false)
   creator     User              @relation("GroupCreator", fields: [createdBy], references: [userId])
   memberships GroupMembership[]
   activities  Activity[]
