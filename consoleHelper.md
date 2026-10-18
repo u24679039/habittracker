@@ -40,3 +40,11 @@ To seed the DB
 node ./prisma/seed.js 
 or 
 npx prisma db seed
+
+
+To push to Gcloud backend cloud
+
+gcloud run deploy epe-habit-track `
+  --source . `
+  --region africa-south1 `
+  --set-env-vars "JWT_SECRET=replace_with_your_jwt_secret,DATABASE_URL=postgresql://neondb_owner:npg_Hr7uIYnU6LMg@ep-muddy-morning-b2rrikzz.c-6.eu-central-1.aws.neon.tech/neondb?sslmode=verify-full"

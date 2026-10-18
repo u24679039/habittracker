@@ -1,0 +1,21 @@
+# Ignore local dependencies and system files
+node_modules/
+.git/
+.gitignore
+venv/
+.env
+
+# Ignore common frontend folders if they happen to be nearby
+.next/
+dist/
+build/
+Readme.md
+consoleHelper.md
+D&A Workstream.md
+demoNonBlocking.js
+/migrations/
+clover.xml
+coverage-final.json
+/lcov-report/
+/coverage/
+out.txt
