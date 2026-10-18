@@ -153,8 +153,8 @@ model AccountabilityGroup {
   creator     User              @relation("GroupCreator", fields: [createdBy], references: [userId])
   memberships GroupMembership[]
   activities  Activity[]
-  flagReason String
-  reveiwed Boolean @default(false)
+  flagReason  String?
+  reviewed    Boolean  @default(false)
   @@map("accountability_groups")
 }
 
