@@ -36,7 +36,11 @@ function GroupFeed({ groupId, apiBase = DEFAULT_API_BASE, refreshMs = 10000 }) {
 
     async function loadFeed() {
       try {
-        const response = await fetch(`${apiBase}/api/groups/${groupId}/feed`);
+        const response = await fetch(`${apiBase}/api/groups/${groupId}/feed`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
 
         if (!response.ok) {
           // The backend answers failures with { message: "..." }

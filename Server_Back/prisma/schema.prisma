@@ -93,6 +93,10 @@ model Habit {
   // directly (a seed script, a manual fix, whatever) and forgets to.
   currValue Int @default(0)
 
+  // Controls which groups receive activity for this habit.
+  sharingMode String @default("PRIVATE")
+  sharedGroupIds Int[] @default([])
+
   logs HabitLog[]
   activities Activity[]
   // GET /api/users/:userId/habits filters on userId on basically every

@@ -295,6 +295,7 @@ function App() {
             <Analytics userId={currentUserId} />
           ) : currentPage === "Notifications" ? (
             <div className="subpage">
+
               <SocialTab groups={myGroups} userId={currentUserId} />
             </div>
           ) : (
