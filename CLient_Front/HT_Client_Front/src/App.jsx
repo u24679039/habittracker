@@ -1,7 +1,8 @@
+/*HT_Client_Front*/
 import { useEffect, useState } from 'react';
-import './App.css';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
+const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
 
 const emptyHabit = {
   title: '',
@@ -19,7 +20,7 @@ function todayAsInputValue() {
 }
 
 /** Renders the habit dashboard and manages its forms and API requests. */
-export default function App({ currentUserId }) {
+export default function App({ currentUserId, onHabitLogged, navigationOptions, onClearNavigationOptions }) {
   const [userId, setUserId] = useState('');
   const [habits, setHabits] = useState([]);
   const [habitView, setHabitView] = useState('active');
@@ -29,12 +30,31 @@ export default function App({ currentUserId }) {
   const [editingHabit, setEditingHabit] = useState(null);
   const [form, setForm] = useState(emptyHabit);
   const [isSaving, setIsSaving] = useState(false);
+  const [sharingMode, setSharingMode] = useState('PRIVATE');
+  const [sharedGroupIds, setSharedGroupIds] = useState([]);
+  const [sharingGroups, setSharingGroups] = useState([]);
+  const [sharingLoading, setSharingLoading] = useState(false);
+  const [sharingReady, setSharingReady] = useState(false);
   const [loggingHabit, setLoggingHabit] = useState(null);
   const [logForm, setLogForm] = useState({ date: todayAsInputValue(), value: '', note: '' });
   const [isLogging, setIsLogging] = useState(false);
   const [incrementingHabit, setIncrementingHabit] = useState(null);
   const [incrementForm, setIncrementForm] = useState({ value: '' });
   const [isIncrementing, setIsIncrementing] = useState(false);
+
+  useEffect(() => {
+    if (!navigationOptions) return;
+    if (navigationOptions.action === 'create') {
+      openCreateModal();
+    } else if (navigationOptions.filter === 'snoozed') {
+      setHabitView('snoozed');
+    } else if (navigationOptions.filter === 'rest') {
+      setHabitView('rest');
+    } else if (navigationOptions.filter === 'active') {
+      setHabitView('active');
+    }
+    onClearNavigationOptions?.();
+  }, [navigationOptions]);
 
   useEffect(() => {
   async function loadHabits() {
@@ -84,6 +104,7 @@ async function logRestDay(habit) {
     throw new Error(errorData.error||'Could not log rest day.');
     }
     await loadHabits();
+    onHabitLogged?.();
   } catch (requestError) {
     setError(requestError.message);
   }
@@ -104,6 +125,7 @@ async function logSnoozeDay(habit) {
       throw new Error(errorData.error || 'Could not log snooze day.');
     }
     await loadHabits();
+    onHabitLogged?.();
   } catch (requestError) {
     setError(requestError.message);
   }
@@ -130,13 +152,63 @@ async function logSnoozeDay(habit) {
   /** Switches the displayed habit status and reloads the list. */
   async function changeHabitView(view) {
     if (view === habitView) return;
+    const wasArchived = habitView === 'archived';
+    const isNowArchived = view === 'archived';
     setHabitView(view);
-    await loadHabits(view);
+    if (isNowArchived || wasArchived) {
+      await loadHabits(view === 'archived' ? 'archived' : 'active');
+    }
   }
+
+  // Load group memberships and, when editing, the saved sharing preferences.
+  useEffect(() => {
+    if (!isFormOpen || !currentUserId) return;
+    let cancelled = false;
+    setSharingLoading(true);
+    setSharingReady(false);
+    setError('');
+
+    async function loadSharing() {
+      try {
+        const groupResponse = await fetch(`${API_URL}/groups/user/${currentUserId}`, {
+          headers: authHeaders(),
+        });
+        if (!groupResponse.ok) throw new Error('Could not load your groups.');
+        const memberships = await groupResponse.json();
+        const groups = memberships.filter(m => m.group).map(m => ({
+          groupId: m.group.groupId,
+          name: m.group.name,
+        }));
+
+        let preferences = { sharingMode: 'PRIVATE', sharedGroupIds: [] };
+        if (editingHabit) {
+          const response = await fetch(`${API_URL}/habits/${editingHabit.habitId}/sharing`, {
+            headers: authHeaders(),
+          });
+          if (!response.ok) throw new Error('Could not load habit sharing settings.');
+          preferences = await response.json();
+        }
+        if (!cancelled) {
+          setSharingGroups(groups);
+          setSharingMode(preferences.sharingMode);
+          setSharedGroupIds(preferences.sharedGroupIds || []);
+          setSharingReady(true);
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setSharingLoading(false);
+      }
+    }
+    loadSharing();
+    return () => { cancelled = true; };
+  }, [isFormOpen, editingHabit?.habitId, currentUserId]);
 
   /** Opens an empty form for creating a habit. */
   function openCreateModal() {
     setForm(emptyHabit);
+    setSharingMode('PRIVATE');
+    setSharedGroupIds([]);
     setEditingHabit(null);
     setError('');
     setIsFormOpen(true);
@@ -205,7 +277,27 @@ async function logSnoozeDay(habit) {
 
       if (!response.ok) throw new Error(`Could not ${isEditing ? 'update' : 'create'} the habit.`);
 
-      closeFormModal();
+      const saved = isEditing ? null : await response.json();
+      const habitId = isEditing ? editingHabit.habitId : saved.habit?.habitId;
+      if (!habitId) throw new Error('Habit saved, but the new habit ID was not returned.');
+
+      const sharingResponse = await fetch(`${API_URL}/habits/${habitId}/sharing`, {
+        method: 'PUT',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sharingMode,
+          sharedGroupIds: sharingMode === 'SELECTED' ? sharedGroupIds : [],
+        }),
+      });
+      if (!sharingResponse.ok) {
+        // Keep the dialog open so the user knows the sharing setting was not saved.
+        // New habits are private by database default until sharing succeeds.
+        if (!isEditing) setEditingHabit({ habitId });
+        throw new Error('Habit saved, but sharing preferences were not saved. Please retry.');
+      }
+
+      setIsFormOpen(false);
+      setEditingHabit(null);
       await loadHabits();
     } catch (requestError) {
       setError(requestError.message);
@@ -239,6 +331,7 @@ async function logSnoozeDay(habit) {
       const data = await response.json();
       closeIncrementModal();
       await loadHabits();
+      onHabitLogged?.();
       //Check if target is met; open completion modal if true
       if(data.currValue>=data.targetValue){
         openLogModal({ ...incrementingHabit,currValue: data.currValue});
@@ -252,13 +345,13 @@ async function logSnoozeDay(habit) {
   /** Opens the completion form for a habit with its target as the default value. */
   function openLogModal(habit) {
     setLoggingHabit(habit);
-    const requiredTarget = habit.StatusOfHabit === 'REST_DAY'
-    ? Math.ceil(habit.targetValue / 2)
-    : habit.targetValue;
+    const requiredTarget = habit.StatusOfHabit === 'SNOOZED'
+      ? Math.max(1, Math.ceil(habit.targetValue / 2))
+      : habit.targetValue;
 
-    const finalValue = (habit.currValue && habit.currValue>habit.targetValue)
-    ? habit.currValue
-    : habit.targetValue;
+    const finalValue = (habit.currValue && habit.currValue > requiredTarget)
+      ? habit.currValue
+      : requiredTarget;
     setLogForm({ date: todayAsInputValue(), value: finalValue.toString(), note: '' });
     setError('');
   }
@@ -299,6 +392,7 @@ async function logSnoozeDay(habit) {
 
       setLoggingHabit(null);
       await loadHabits();
+      onHabitLogged?.();
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -339,9 +433,19 @@ async function logSnoozeDay(habit) {
     }
   }
 
+  const displayedHabits = habits.filter((habit) => {
+    if (habitView === 'snoozed') {
+      return habit.StatusOfHabit === 'SNOOZED';
+    }
+    if (habitView === 'rest') {
+      return habit.StatusOfHabit === 'REST_DAY';
+    }
+    return true;
+  });
+
   return (
-    <main className="habit-app-shell">
-      <h1 className="app-title">My habits</h1>
+    <div className="habit-app-shell">
+      <h1 className="page-title">My habits</h1>
 
       <section className="habit-list-header" aria-label="Habit controls">
         <div className="tabs" role="tablist" aria-label="Habit status">
@@ -353,6 +457,24 @@ async function logSnoozeDay(habit) {
             onClick={() => changeHabitView('active')}
           >
             Active
+          </button>
+          <button
+            className={`tab ${habitView === 'snoozed' ? 'tab--active' : ''}`}
+            type="button"
+            role="tab"
+            aria-selected={habitView === 'snoozed'}
+            onClick={() => changeHabitView('snoozed')}
+          >
+            Snoozed
+          </button>
+          <button
+            className={`tab ${habitView === 'rest' ? 'tab--active' : ''}`}
+            type="button"
+            role="tab"
+            aria-selected={habitView === 'rest'}
+            onClick={() => changeHabitView('rest')}
+          >
+            Rest Day
           </button>
           <button
             className={`tab ${habitView === 'archived' ? 'tab--active' : ''}`}
@@ -376,58 +498,146 @@ async function logSnoozeDay(habit) {
         <p className="state-message">Create a user before adding habits.</p>
       )}
 
-      {!loading && !error && userId && habits.length === 0 && (
+      {!loading && !error && userId && displayedHabits.length === 0 && (
         <p className="state-message">
-          No {habitView} habits yet.{habitView === 'active' && ' Create your first one.'}
+          {habitView === 'snoozed' && 'No snoozed habits today.'}
+          {habitView === 'rest' && 'No rest day habits today.'}
+          {habitView === 'active' && 'No active habits yet. Create your first one.'}
+          {habitView === 'archived' && 'No archived habits.'}
         </p>
       )}
 
-      {!loading && habits.length > 0 && (
+      {!loading && displayedHabits.length > 0 && (
         <div className="habit-list">
-          {habits.map((habit) => (
-            <article className="habit-row" key={habit.habitId}>
-              <div>
-                <h2 className="habit-row__title">{habit.title}</h2>
-                {habit.description && <p className="habit-row__desc">{habit.description}</p>}
-                <p className="habit-row__meta">
-                  {habit.targetValue} {habit.targetUnit} · {habit.frequency.toLowerCase()}
-                </p>
-              </div>
-              <div className="habit-row__actions">
-  <div className="habit-row__actions-primary">
-    {habitView === 'active' && (
-    <button className="btn btn--primary" type="button" onClick={() => openIncrementModal(habit)}>
-      Log increment
-    </button>
-  )}
-    <button className="btn btn--ghost" type="button" onClick={() => openEditModal(habit)}>
-      Edit
-    </button>
-    {habitView === 'active' && (
-      <button className="btn btn--danger" type="button" onClick={() => archiveHabit(habit)}>
-        Archive
-      </button>
-    )}
-    {habitView === 'archived' && (
-      <button className="btn btn--primary" type="button" onClick={() => unarchiveHabit(habit)}>
-        Unarchive
-      </button>
-    )}
-  </div>
+          {displayedHabits.map((habit) => {
+            const status = habit.StatusOfHabit;
+            const isCompleted = status === 'COMPLETED';
+            const isSnoozed   = status === 'SNOOZED';
+            const isRestDay   = status === 'REST_DAY';
+            const effectiveTarget = isSnoozed
+              ? Math.max(1, Math.ceil((habit.targetValue || 1) / 2))
+              : (habit.targetValue || 1);
+            const displayCurrValue = isCompleted
+              ? Math.max(habit.currValue || 0, effectiveTarget)
+              : (habit.currValue || 0);
 
-  {habitView === 'active' && (
-    <div className="habit-row__actions-secondary">
-      <button className="btn btn--rest" type="button" onClick={() => logRestDay(habit)}>
-    Log Rest Day
-  </button>
-  <button className="btn btn--snooze" type="button" onClick={() => logSnoozeDay(habit)}>
-    Log Snooze Day
-      </button>
-    </div>
-  )}
-</div>
-            </article>
-          ))}
+            return (
+              <article className="group-card habit-card" key={habit.habitId}>
+                <div className="group-card-header">
+                  <div className="habit-card-title-group">
+                    <h3>{habit.title}</h3>
+                    <span className="habit-meta-text">
+                      {isSnoozed ? (
+                        <>Target: {effectiveTarget} {habit.targetUnit} (snoozed from {habit.targetValue}) · {habit.frequency.toLowerCase()}</>
+                      ) : (
+                        <>{habit.targetValue} {habit.targetUnit} · {habit.frequency.toLowerCase()}</>
+                      )}
+                    </span>
+                    <div className="habit-progress-line">
+                      Progress: <strong>{displayCurrValue} / {effectiveTarget} {habit.targetUnit}</strong>
+                    </div>
+                    {isRestDay && (
+                      <div className="habit-rest-hint">
+                        Rest Day · No logging needed today
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="habit-card-status">
+                    {isCompleted && (
+                      <span className="habit-status-badge habit-status-badge--completed">Logged today</span>
+                    )}
+                    {isSnoozed && (
+                      <span className="habit-status-badge habit-status-badge--snoozed">Snoozed</span>
+                    )}
+                    {isRestDay && (
+                      <span className="habit-status-badge habit-status-badge--rest">Rest day</span>
+                    )}
+                    {!isCompleted && !isSnoozed && !isRestDay && habitView === 'active' && (
+                      <span className="habit-status-badge habit-status-badge--active">Active</span>
+                    )}
+                  </div>
+                </div>
+
+                {habit.description && (
+                  <p className="group-description">{habit.description}</p>
+                )}
+
+                <div className="group-card-meta">
+                  <div className="group-code-actions">
+                    {habitView === 'active' && (
+                      <>
+                        <button
+                          type="button"
+                          className="small-action-button small-action-button--primary"
+                          onClick={() => openIncrementModal(habit)}
+                          disabled={isCompleted}
+                          title={isCompleted ? 'Already logged today' : undefined}
+                        >
+                          {isCompleted ? 'Done' : '+ Log Increment'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`small-action-button ${isRestDay ? 'small-action-button--active' : ''}`}
+                          onClick={() => logRestDay(habit)}
+                          disabled={isCompleted}
+                          title={isCompleted ? 'Already logged today' : isRestDay ? 'Rest day active' : 'Log rest day'}
+                        >
+                          {isRestDay ? 'Resting' : 'Rest Day'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`small-action-button ${isSnoozed ? 'small-action-button--active' : ''}`}
+                          onClick={() => logSnoozeDay(habit)}
+                          disabled={isCompleted}
+                          title={isCompleted ? 'Already logged today' : isSnoozed ? 'Already snoozed' : 'Snooze habit'}
+                        >
+                          {isSnoozed ? 'Snoozed' : 'Snooze'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="small-action-button"
+                          onClick={() => openEditModal(habit)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="small-action-button small-action-button--danger"
+                          onClick={() => archiveHabit(habit)}
+                        >
+                          Archive
+                        </button>
+                      </>
+                    )}
+
+                    {habitView === 'archived' && (
+                      <>
+                        <button
+                          type="button"
+                          className="small-action-button small-action-button--primary"
+                          onClick={() => unarchiveHabit(habit)}
+                        >
+                          Unarchive
+                        </button>
+                        <button
+                          type="button"
+                          className="small-action-button"
+                          onClick={() => openEditModal(habit)}
+                        >
+                          Edit
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
 
@@ -485,13 +695,37 @@ async function logSnoozeDay(habit) {
                 </select>
               </label>
 
+              <fieldset className="field" disabled={isSaving || sharingLoading}>
+                <legend>Share habit activity with</legend>
+                <label><input type="radio" name="sharingMode" value="PRIVATE"
+                  checked={sharingMode === 'PRIVATE'} onChange={() => setSharingMode('PRIVATE')} /> None (private)</label>
+                <label><input type="radio" name="sharingMode" value="ALL"
+                  checked={sharingMode === 'ALL'} onChange={() => setSharingMode('ALL')} /> All my groups</label>
+                <label><input type="radio" name="sharingMode" value="SELECTED"
+                  checked={sharingMode === 'SELECTED'} onChange={() => setSharingMode('SELECTED')} /> Selected groups</label>
+                {sharingMode === 'SELECTED' && (
+                  <div>
+                    {sharingGroups.length === 0 && <p>You haven't joined any groups yet.</p>}
+                    {sharingGroups.map(group => (
+                      <label key={group.groupId} style={{ display: 'block' }}>
+                        <input type="checkbox" checked={sharedGroupIds.includes(group.groupId)}
+                          onChange={event => setSharedGroupIds(ids => event.target.checked
+                            ? [...new Set([...ids, group.groupId])]
+                            : ids.filter(id => id !== group.groupId))} /> {group.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {sharingLoading && <p>Loading sharing preferences…</p>}
+              </fieldset>
+
               {error && <p className="form-error">{error}</p>}
 
               <div className="form-actions">
                 <button className="btn btn--ghost" type="button" onClick={closeFormModal} disabled={isSaving}>
                   Cancel
                 </button>
-                <button className="btn btn--primary" type="submit" disabled={isSaving}>
+                <button className="btn btn--primary" type="submit" disabled={isSaving || !sharingReady || (sharingMode === 'SELECTED' && sharedGroupIds.length === 0)}>
                   {isSaving ? 'Saving…' : editingHabit ? 'Save changes' : 'Create habit'}
                 </button>
               </div>
@@ -518,7 +752,7 @@ async function logSnoozeDay(habit) {
         <form className="modal-panel__body form" onSubmit={submitIncrement}>
           <p className="habit-row__desc">
             Progress: {incrementingHabit.currValue || 0} /{ 
-            incrementingHabit.StatusOfHabit === 'REST_DAY'
+            incrementingHabit.StatusOfHabit === 'SNOOZED'
             ? Math.ceil(incrementingHabit.targetValue / 2) 
             : incrementingHabit.targetValue
             } {incrementingHabit.targetUnit}
@@ -577,7 +811,8 @@ async function logSnoozeDay(habit) {
 
             <form className="modal-panel__body form" onSubmit={logCompletion}>
               <p className="habit-row__desc">
-                Target: {loggingHabit.targetValue} {loggingHabit.targetUnit}
+                Target: {loggingHabit.StatusOfHabit === 'SNOOZED' ? Math.max(1, Math.ceil(loggingHabit.targetValue / 2)) : loggingHabit.targetValue} {loggingHabit.targetUnit}
+                {loggingHabit.StatusOfHabit === 'SNOOZED' && ' (reduced for snooze)'}
               </p>
 
               <div className="field-row">
@@ -617,6 +852,6 @@ async function logSnoozeDay(habit) {
           </section>
         </div>
       )}
-    </main>
+    </div>
   );
 }

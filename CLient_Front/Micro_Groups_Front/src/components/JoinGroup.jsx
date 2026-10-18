@@ -1,27 +1,18 @@
 import { useState } from "react";
-import "./JoinGroup.css";
 
 /***********************************************************************
  * JoinGroup
  *
- * Allows a user to join an accountability group using an invitation
- * code and returns to the groups view after a successful join.
+ * Pop-up modal allowing a user to join an accountability group using
+ * an invitation code and returns to the groups view after a successful join.
+ * Follows the same modal styling as the habits forms.
  ***********************************************************************/
-function JoinGroup({ currentUserId, onSuccess })
+function JoinGroup({ currentUserId, onSuccess, onClose })
 {
     const [isJoining, setIsJoining] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
-    /***********************************************************************
-     * handleSubmit
-     *
-     * Handles submission of the join group form. It formats the entered
-     * invitation code and sends it with the current user's ID to the
-     * backend to join the group. On success, it displays a confirmation
-     * message and returns to the groups view. Any backend or connection
-     * errors are displayed to the user.
-     ***********************************************************************/
     const handleSubmit = async (event) =>
     {
         event.preventDefault();
@@ -56,7 +47,9 @@ function JoinGroup({ currentUserId, onSuccess })
             }
 
             setIsSuccess(true);
-            setTimeout(onSuccess, 1000);
+            setTimeout(() => {
+                onSuccess?.();
+            }, 800);
         }
         catch
         {
@@ -68,55 +61,90 @@ function JoinGroup({ currentUserId, onSuccess })
         }
     };
 
+    const handleDismiss = onClose || onSuccess;
+
     return (
-        <main className="join-group-page">
-            <section className="join-group-card">
+        <div className="modal-backdrop" role="presentation" onMouseDown={handleDismiss}>
+            <section
+                className="modal-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="join-group-title"
+                onMouseDown={(e) => e.stopPropagation()}
+            >
+                <header className="modal-panel__header">
+                    <h2 id="join-group-title">Join a Group</h2>
+                    {handleDismiss && (
+                        <button
+                            className="modal-panel__close"
+                            type="button"
+                            onClick={handleDismiss}
+                            disabled={isJoining}
+                        >
+                            ×
+                        </button>
+                    )}
+                </header>
 
                 {isSuccess ? (
-                    <div className="success-message" role="status">
-                        Group joined successfully.
+                    <div className="modal-panel__body form">
+                        <div
+                            className="success-message"
+                            role="status"
+                            style={{ textAlign: "center", padding: "1.5rem 0" }}
+                        >
+                            <strong>Group joined successfully.</strong>
+                        </div>
                     </div>
                 ) : (
-                    <>
-                        <div className="join-group-header">
-                            <p className="join-group-label">ACCOUNTABILITY GROUP</p>
-                            <h1>Join a Group</h1>
-                            <p>Enter the invitation code shared by your group administrator.</p>
-                        </div>
+                    <form onSubmit={handleSubmit} className="modal-panel__body form">
+                        <p className="habit-row__desc">
+                            Enter the invitation code shared by your group administrator.
+                        </p>
 
-                        <form onSubmit={handleSubmit} className="join-group-form">
-                            <div className="form-field">
-                                <label htmlFor="invitationCode">Invitation Code</label>
-                                <input
-                                    id="invitationCode"
-                                    name="invitationCode"
-                                    maxLength={6}
-                                    pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
-                                    placeholder="e.g. KXGW8M"
-                                    autoComplete="off"
-                                    required
-                                />
+                        <label className="field" htmlFor="invitationCode">
+                            Invitation Code
+                            <input
+                                id="invitationCode"
+                                name="invitationCode"
+                                maxLength={6}
+                                pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
+                                placeholder="e.g. KXGW8M"
+                                autoComplete="off"
+                                required
+                                autoFocus
+                            />
+                        </label>
+
+                        {errorMessage && (
+                            <div className="form-error" role="alert">
+                                {errorMessage}
                             </div>
+                        )}
 
-                            {errorMessage && (
-                                <div className="message error-message" role="alert">
-                                    {errorMessage}
-                                </div>
+                        <div className="form-actions">
+                            {handleDismiss && (
+                                <button
+                                    type="button"
+                                    className="btn btn--ghost"
+                                    onClick={handleDismiss}
+                                    disabled={isJoining}
+                                >
+                                    Cancel
+                                </button>
                             )}
-
                             <button
                                 type="submit"
-                                className="join-group-button"
+                                className="btn btn--primary"
                                 disabled={isJoining}
                             >
                                 {isJoining ? "Joining Group..." : "Join Group"}
                             </button>
-                        </form>
-                    </>
+                        </div>
+                    </form>
                 )}
-
             </section>
-        </main>
+        </div>
     );
 }
 

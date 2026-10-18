@@ -8,7 +8,6 @@
 
 import React, { useState, useEffect } from "react";
 import { getLatestMilestoneMessage } from "./feedDisplayHelpers";
-import "./MilestoneToast.css";
 
 /**
  * Shows a temporary toast when a milestone has been hit.

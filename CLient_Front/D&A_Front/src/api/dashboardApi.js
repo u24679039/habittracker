@@ -1,30 +1,29 @@
-// Base URL for the backend API. Can be overridden per-environment via a
-// VITE_API_BASE env var (e.g. for a deployed backend); defaults to the
-// local dev server on port 4000 for local development/demos.
-const API_BASE = import.meta.env?.VITE_API_BASE || '/api';
+// Base URL for the backend API. Empty string = use Vite's proxy (all /api/* 
+// requests are forwarded to the backend by Main_Frontend's vite.config.js).
+// Set VITE_API_BASE to an absolute URL only for deployments where the backend
+// is on a different host.
+const API_BASE = import.meta.env?.VITE_API_BASE || '';
 
 /**
- * Small wrapper so every call gets consistent error handling and so the
- * base URL only needs to change in one place. `userId` is passed through
- * until the auth workstream is integrated (see dashboardRoutes.js note) -
- * every backend route currently expects it as a query param rather than
- * reading it from a session/JWT.
+ * Small wrapper so every call gets consistent error handling and the
+ * Authorization header. `userId` is passed as a query param for routes
+ * that still expect it; JWT auth is always included for protected routes.
  *
  * @param {string} path - route path starting with '/', e.g. '/dashboard/streaks'
  * @param {number} userId - the user to fetch data for
  * @param {object} params - any extra query params (from/to dates, limit, month, etc.)
  * @returns {Promise<any>} the parsed JSON response body
- * @throws {Error} if the response isn't ok - message comes from the
- *   backend's { error: "..." } body when available, so callers can show
- *   the real reason (e.g. "A valid userId is required") rather than a
- *   generic failure message.
+ * @throws {Error} if the response isn't ok
  */
 async function get(path, userId, params = {}) {
   const query = new URLSearchParams({ userId, ...params }).toString();
-  const response = await fetch(`${API_BASE}${path}?${query}`);
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_BASE}/api${path}?${query}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `Request to ${path} failed with status ${response.status}`);
+    throw new Error(body.error || body.message || `Request to ${path} failed with status ${response.status}`);
   }
   return response.json();
 }
@@ -49,6 +48,46 @@ export const analyticsApi = {
   getTrend: (userId, from, to) => get('/analytics/trend', userId, { from, to }),
   getHeatmap: (userId, month) => get('/analytics/heatmap', userId, { month }),
   getBreakdown: (userId) => get('/analytics/breakdown', userId),
-  exportCsvUrl: (userId) => `${API_BASE}/analytics/export.csv?userId=${userId}`,
-  exportPdfUrl: (userId, month) => `${API_BASE}/analytics/export.pdf?userId=${userId}&month=${month}`,
+  exportCsvUrl: (userId) => {
+    const token = localStorage.getItem('token');
+    const authParam = token ? `&token=${encodeURIComponent(token)}` : '';
+    return `${API_BASE}/api/analytics/export.csv?userId=${userId}${authParam}`;
+  },
+  exportPdfUrl: (userId, month) => {
+    const token = localStorage.getItem('token');
+    const authParam = token ? `&token=${encodeURIComponent(token)}` : '';
+    return `${API_BASE}/api/analytics/export.pdf?userId=${userId}&month=${month}${authParam}`;
+  },
+  downloadCsv: async (userId) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/api/analytics/export.csv?userId=${userId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Failed to export CSV');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'habittracker-analytics.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+  downloadPdf: async (userId, month) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/api/analytics/export.pdf?userId=${userId}&month=${month}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Failed to export PDF');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'habittracker-analytics.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };
