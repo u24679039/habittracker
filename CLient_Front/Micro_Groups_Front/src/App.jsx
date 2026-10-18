@@ -23,6 +23,12 @@ function App({ currentUserId, onViewActivity })
         openGroups();
     }
 
+    function handleGroupsChanged()
+    {
+        setGroupsRefreshKey((previous) => previous + 1);
+        openGroups();
+    }
+
     function openGroup(groupId)
     {
         setSelectedGroupId(groupId);
@@ -44,6 +50,7 @@ function App({ currentUserId, onViewActivity })
             {currentView === "groupCreation" && (
                 <GroupCreation
                     currentUserId={currentUserId}
+                    onSuccess={handleGroupsChanged}
                     onClose={openGroups}
                 />
             )}
@@ -80,7 +87,7 @@ function App({ currentUserId, onViewActivity })
                             <GroupManagement
                                 groupId={selectedGroupId}
                                 currentUserId={currentUserId}
-                                onDelete={openGroups}
+                                onDelete={handleGroupsChanged}
                             />
                         </div>
                     </section>
