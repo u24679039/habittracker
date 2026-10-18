@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked }) {
+function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked, loggedOut }) {
   const [page, setPage] = useState("login");
 
   const [loginData, setLoginData] = useState({
@@ -25,12 +25,24 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // When loggedOut changes or when user logs out from shell, reset internal page to login and clear profile
+  useEffect(() => {
+    if (loggedOut) {
+      setPage("login");
+      setProfile(null);
+      setFlaggedGroups([]);
+      setMessage("");
+    }
+  }, [loggedOut]);
+
   // Restore an existing session after refreshing the shared application.
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) {
       loadProfile(savedToken).finally(() => onSessionChecked?.());
     } else {
+      setPage("login");
+      setProfile(null);
       onSessionChecked?.();
     }
   }, []);
@@ -631,17 +643,6 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 </div>
               </div>
 
-              <div className="security-box">
-                <strong>
-                  Role-based security
-                </strong>
-
-                <p>
-                  Protected API routes require a valid
-                  JWT. Administrator routes also
-                  require the ADMIN role.
-                </p>
-              </div>
             </section>
           </div>
 
@@ -837,9 +838,6 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             Reach your goals.
           </p>
 
-          <div className="security-note">
-            Secure account authentication
-          </div>
         </div>
 
         <div className="form-section">

@@ -407,6 +407,7 @@ function App() {
         {/* Authentication stays mounted so profile state survives page changes. */}
         <div className="auth-slot" hidden={!authVisible}>
           <Authentication
+            loggedOut={!authenticatedUser}
             onAuthenticated={(user) => {
               setAuthenticatedUser(user);
               setCheckingSession(false);
