@@ -1,0 +1,85 @@
+// EH-59: Activity feed UI component
+// Displays a group's shared activity feed. Matches design of group design document
+// (Figure 23 - Micro-group dashboard)
+//
+// Takes a list of feed entries (the exact shape buildGroupFeed, EH-34,
+// produces) and orders them chronologically
+
+import React from "react";
+import { formatRelativeTime, getInitials } from "./feedDisplayHelpers";
+
+// Allow component be viewed on its own before it's wired
+// up to the real API.
+const MOCK_FEED_ENTRIES = [
+  {
+    type: "milestone",
+    userId: 1,
+    userName: "Monal",
+    message: "Monal just hit a 7-day streak!",
+    timestamp: new Date(),
+  },
+  {
+    type: "habit_completed",
+    userId: 2,
+    userName: "Shahd",
+    message: "Shahd logged Running: 5km",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
+  },
+  {
+    type: "habit_completed",
+    userId: 3,
+    userName: "David",
+    message: "David logged Coding practice: 45 mins",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 20),
+  },
+];
+
+/**
+ * Renders the shared group activity feed.
+ * @param {{entries?: Array, title?: string}} props
+ */
+function ActivityFeed({ entries = MOCK_FEED_ENTRIES, title = "Group Activity" }) {
+  return (
+    <div className="activity-feed-card">
+      <div className="activity-feed-card__header">
+        <h3>{title}</h3>
+      </div>
+
+      {entries.length === 0 ? (
+        <p className="activity-feed__empty">
+          No activity yet — log a habit to get things started.
+        </p>
+      ) : (
+        <ul className="activity-feed">
+          {entries.map((entry, index) => (
+            <li
+              key={index}
+              className={`activity-feed__item activity-feed__item--${entry.type}`}
+            >
+              <span className="activity-feed__avatar" aria-hidden="true">
+                {getInitials(entry.userName)}
+              </span>
+              <div className="activity-feed__content">
+                <p className="activity-feed__message">
+                  {entry.type === "milestone" && (
+                    <span className="activity-feed__badge">🔥 Milestone</span>
+                  )}
+                  {entry.message}
+                </p>
+                <span className="activity-feed__time">
+                  {formatRelativeTime(entry.timestamp)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="activity-feed-card__footer">
+        <span>View full activity →</span>
+      </div>
+    </div>
+  );
+}
+
+export default ActivityFeed;
