@@ -2,15 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { analyticsApi } from '../api/dashboardApi';
 import StreakHeatmap from './StreakHeatmap';
-import '../styles/tokens.css';
+
+// Recharts draws SVG attributes, so it needs literal colours (kept in sync with tokens.css).
+const CHART_LINE = '#4a6040'; // --olive
+const CHART_GRID = '#ddd7c6'; // --line
+const CHART_TICK = '#5d6254'; // --ink-soft
 
 /**
  * Analytics
- * 
+ *
  * The Analytics page (Fig. 24): three summary stat cards, a weekly
  * "Execution Consistency" line chart, a monthly habit-density heatmap,
- * and a per-habit completion breakdown - plus CSV/PDF export buttons
- * matching the dashboard's design token styling and hover interactive states.
+ * and a per-habit completion breakdown - plus CSV/PDF export buttons.
+ *
+ * Styling lives in Main_Frontend/src/styles/tokens.css (hf- classes).
  */
 export default function Analytics({ userId }) {
   // Compute active month and trailing 7-day window once per mount
@@ -55,33 +60,14 @@ export default function Analytics({ userId }) {
 
   return (
     <div className="hf-page">
-      {/* Inline styles for export button hover utility */}
-      <style>{`
-        .hf-export-btn {
-          padding: 4px 10px;
-          font-size: 0.8rem;
-          background: #fff;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          cursor: pointer;
-          text-decoration: none;
-          color: #333;
-          transition: background 0.2s ease, border-color 0.2s ease;
-        }
-        .hf-export-btn:hover {
-          background: #f0f0f0;
-          border-color: #999;
-        }
-      `}</style>
-
       {/* Page Header with Export Buttons */}
-      <div className="hf-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div className="hf-page-header">
         <h1>Analytics</h1>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <a href={analyticsApi.exportCsvUrl(userId)} className="hf-export-btn">
+        <div className="hf-page-header__actions">
+          <a href={analyticsApi.exportCsvUrl(userId)} className="btn btn--outline btn--sm">
             Export CSV
           </a>
-          <a href={analyticsApi.exportPdfUrl(userId, month)} className="hf-export-btn">
+          <a href={analyticsApi.exportPdfUrl(userId, month)} className="btn btn--outline btn--sm">
             Export PDF
           </a>
         </div>
@@ -89,63 +75,70 @@ export default function Analytics({ userId }) {
 
       {error && <div className="hf-error-banner">Couldn't load analytics: {error}</div>}
 
-      {/* Top Stat Cards Grid - Responsive auto-fit */}
-      <div className="hf-grid hf-grid--stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      {/* Top Stat Cards */}
+      <div className="hf-grid hf-grid--stats">
         <StatCard label="Current streak" value={summary && `${summary.currentStreak} days`} />
         <StatCard label="Highest streak" value={summary && `${summary.highestStreak} days`} />
         <StatCard label="Avg completion" value={summary && `${summary.avgCompletion}%`} />
       </div>
 
       {/* Execution Consistency Chart Section */}
-      <section className="hf-card" style={{ marginTop: 'var(--hf-space-4)' }}>
-        <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Execution consistency (last 7 days)</h3>
+      <section className="hf-card">
+        <h3 className="hf-section-gap" style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
+          Execution consistency (last 7 days)
+        </h3>
         {trend === null && !error && <p className="hf-empty-state">Loading trend...</p>}
         {trend && trend.length === 0 && <p className="hf-empty-state">No logs yet this week.</p>}
         {trend && trend.length > 0 && (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trend}>
-              <CartesianGrid stroke="#eee" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#666' }} tickFormatter={(d) => d.slice(5)} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#666' }} width={32} />
+              <CartesianGrid stroke={CHART_GRID} vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: CHART_TICK }} tickFormatter={(d) => d.slice(5)} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: CHART_TICK }} width={32} />
               <Tooltip formatter={(v) => `${v}%`} />
-              <Line type="monotone" dataKey="completionRate" stroke="#333" strokeWidth={2} dot={{ fill: '#333', r: 3 }} />
+              <Line
+                type="monotone"
+                dataKey="completionRate"
+                stroke={CHART_LINE}
+                strokeWidth={2}
+                dot={{ fill: CHART_LINE, r: 3 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
       </section>
 
-      {/* Two-Column Analytics Layout matching Dashboard Hero Card styling - Responsive auto-fit */}
-      <div className="hf-grid hf-analytics-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginTop: 'var(--hf-space-4)' }}>
-        
-        {/* Monthly Streak Heatmap Card */}
+      {/* Two-column layout: heatmap + per-habit breakdown */}
+      <div className="hf-grid hf-analytics-two-col">
         <section className="hf-hero-card">
-          <h3 style={{ marginTop: 0, fontSize: '1.1rem', marginBottom: '1rem' }}>Habit density heatmap</h3>
+          <div className="hf-section-head">
+            <h3>Habit density heatmap</h3>
+          </div>
           {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
           {heatmap && (
-            <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', overflowX: 'auto' }}>
+            <div className="hf-heatmap-panel">
               <StreakHeatmap month={month} data={heatmap} />
             </div>
           )}
         </section>
 
-        {/* Per-Habit Breakdown Card */}
         <section className="hf-hero-card">
-          <h3 style={{ marginTop: 0, fontSize: '1.1rem', marginBottom: '1rem' }}>Per-habit breakdown</h3>
+          <div className="hf-section-head">
+            <h3>Per-habit breakdown</h3>
+          </div>
           {breakdown === null && !error && <p className="hf-empty-state">Loading breakdown...</p>}
           {breakdown && breakdown.length === 0 && (
             <p className="hf-empty-state">No active habits to break down yet.</p>
           )}
           {breakdown && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
+            <div className="hf-list">
               {breakdown.map((habit) => (
-                <div key={habit.habitName} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 500, minWidth: '120px' }}>{habit.habitName}</span>
-                  <div className="hf-progress-track" style={{ flex: 1, minWidth: '120px', margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%`, background: '#333', height: '100%' }} />
+                <div className="hf-list-item" key={habit.habitName}>
+                  <span className="hf-list-item__name">{habit.habitName}</span>
+                  <div className="hf-progress-track">
+                    <div className="hf-progress-fill" style={{ width: `${habit.completionRate}%` }} />
                   </div>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)', minWidth: '35px', textAlign: 'right' }}>
-                    {habit.completionRate}%
-                  </span>
+                  <span className="hf-pct">{habit.completionRate}%</span>
                 </div>
               ))}
             </div>
@@ -157,13 +150,13 @@ export default function Analytics({ userId }) {
 }
 
 /**
- * Reusable Stat Card Component matching dashboard card layout style
+ * Reusable stat card: label above, Fraunces numeral in the clay accent.
  */
 function StatCard({ label, value }) {
   return (
-    <div className="hf-card" style={{ padding: '1rem', textAlign: 'center' }}>
-      <p className="hf-stat-label" style={{ fontSize: '0.8rem', color: '#666', margin: '0 0 4px 0' }}>{label}</p>
-      <p className="hf-stat-value" style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: 0 }}>{value ?? '—'}</p>
+    <div className="hf-card hf-stat-card">
+      <p className="hf-stat-label">{label}</p>
+      <p className="hf-stat-value">{value ?? '—'}</p>
     </div>
   );
 }
