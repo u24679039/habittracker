@@ -116,13 +116,13 @@ app.use((err, req, res, next) => {
 // ---------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------
-const PORT = process.env.PORT || 5174;
- 
+const PORT = process.env.PORT || 8080;
+
 if (require.main === module) {
-  const server = app.listen(PORT, () => {
-    console.log(`HabitForge server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`HabitForge server running on port ${PORT}`);
   });
   server.on('error', (error) => console.error('Server error:', error));
 }
- 
+
 module.exports = app;
