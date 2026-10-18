@@ -35,18 +35,88 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
 
     async function load() {
       try {
-        // Fetch all analytics widget streams concurrently
-        const [summaryData, trendData, heatmapData, breakdownData] = await Promise.all([
+        // Fetch all analytics widget streams concurrently, along with live habits
+        const [summaryData, trendData, heatmapData, breakdownData, userHabits] = await Promise.all([
           analyticsApi.getSummary(userId),
           analyticsApi.getTrend(userId, weekAgo, today),
           analyticsApi.getHeatmap(userId, month),
           analyticsApi.getBreakdown(userId),
+          fetch(`/api/users/${userId}/habits?archived=false`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
         ]);
         if (cancelled) return;
-        setSummary(summaryData);
-        setTrend(trendData);
-        setHeatmap(heatmapData);
-        setBreakdown(breakdownData);
+
+        const habitsList = Array.isArray(userHabits) ? userHabits : [];
+        
+        // Calculate today's active progress from habit records (e.g. increments)
+        const habitsToday = habitsList.map((h) => {
+          const target = h.targetValue || 1;
+          const curr = h.currValue || 0;
+          if (h.StatusOfHabit === 'COMPLETED' || h.StatusOfHabit === 'REST_DAY') return 100;
+          if (curr > 0) return Math.min(100, Math.round((curr / target) * 100));
+          return 0;
+        });
+        const activeTodayCount = habitsToday.filter((r) => r > 0).length;
+        const avgTodayRate = habitsToday.length > 0
+          ? Math.round(habitsToday.reduce((a, b) => a + b, 0) / habitsToday.length)
+          : 0;
+
+        // Enhanced Per-habit breakdown incorporating current logged increments
+        let finalBreakdown = Array.isArray(breakdownData) ? [...breakdownData] : [];
+        if (habitsList.length > 0) {
+          habitsList.forEach((h) => {
+            const target = h.targetValue || 1;
+            const curr = h.currValue || 0;
+            const rate = (h.StatusOfHabit === 'COMPLETED' || h.StatusOfHabit === 'REST_DAY')
+              ? 100
+              : curr > 0
+              ? Math.min(100, Math.round((curr / target) * 100))
+              : 0;
+
+            const existingIndex = finalBreakdown.findIndex((b) => b.habitName === h.title);
+            if (existingIndex >= 0) {
+              finalBreakdown[existingIndex].completionRate = Math.max(finalBreakdown[existingIndex].completionRate, rate);
+            } else {
+              finalBreakdown.push({ habitName: h.title, completionRate: rate });
+            }
+          });
+        }
+
+        // Enhanced Heatmap: reflect today's activity if progress was logged
+        const finalHeatmap = { ...(heatmapData || {}) };
+        if (avgTodayRate > 0) {
+          finalHeatmap[today] = Math.max(finalHeatmap[today] || 0, activeTodayCount || 1);
+        }
+
+        // Enhanced Trend: reflect today's execution rate in the weekly chart
+        let finalTrend = Array.isArray(trendData) ? [...trendData] : [];
+        if (avgTodayRate > 0) {
+          const todayIndex = finalTrend.findIndex((t) => t.date === today);
+          if (todayIndex >= 0) {
+            finalTrend[todayIndex].completionRate = Math.max(finalTrend[todayIndex].completionRate, avgTodayRate);
+          } else {
+            finalTrend.push({ date: today, completionRate: avgTodayRate });
+            finalTrend.sort((a, b) => a.date.localeCompare(b.date));
+          }
+        }
+
+        // Enhanced Summary stats
+        const finalSummary = { ...(summaryData || {}) };
+        if ((!finalSummary.avgCompletion || finalSummary.avgCompletion === 0) && avgTodayRate > 0) {
+          finalSummary.avgCompletion = avgTodayRate;
+        }
+        if ((!finalSummary.currentStreak || finalSummary.currentStreak === 0) && avgTodayRate > 0) {
+          finalSummary.currentStreak = 1;
+        }
+        if ((!finalSummary.highestStreak || finalSummary.highestStreak === 0) && avgTodayRate > 0) {
+          finalSummary.highestStreak = 1;
+        }
+
+        setSummary(finalSummary);
+        setTrend(finalTrend);
+        setHeatmap(finalHeatmap);
+        setBreakdown(finalBreakdown);
       } catch (err) {
         if (!cancelled) setError(err.message);
       }

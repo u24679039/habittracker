@@ -128,9 +128,31 @@ function App() {
   );
   const [activeGroup, setActiveGroup] = useState(null);
 
-  // --- Fix 1: Notification state ---
+  // --- Fix 1: Notification & Group Activity state ---
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [groupActivities, setGroupActivities] = useState(() => [
+    {
+      activityId: "init-1",
+      message: "Shahd logged Running: 5km",
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    },
+    {
+      activityId: "init-2",
+      message: "David logged Coding practice: 45 mins",
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
+    },
+  ]);
+
+  /** Adds a group activity and also mirrors it to the global notifications */
+  function addGroupActivity(entry) {
+    const message = entry.message || (typeof entry === 'string' ? entry : '');
+    const timestamp = entry.timestamp instanceof Date ? entry.timestamp.toISOString() : (entry.timestamp || new Date().toISOString());
+    setGroupActivities((prev) => [
+      { activityId: Date.now() + Math.random(), message, timestamp },
+      ...prev,
+    ]);
+  }
 
   /** Prepends a new notification and increments the unread counter. */
   function addNotification(message) {
@@ -153,6 +175,9 @@ function App() {
     setHabitLogCount((prev) => prev + 1);
   }
 
+  // --- Navigation options (e.g. open CRUD modal, apply filter) ---
+  const [habitNavigationOptions, setHabitNavigationOptions] = useState(null);
+
   useEffect(() => {
     sessionStorage.setItem("habitTrackerPage", currentPage);
   }, [currentPage]);
@@ -171,9 +196,14 @@ function App() {
     setActiveGroup(null);
   }
 
-  function goTo(page) {
+  function goTo(page, options = null) {
     setCurrentPage(page);
     setActiveGroup(null);
+    if (page === "Habits") {
+      setHabitNavigationOptions(options);
+    } else {
+      setHabitNavigationOptions(null);
+    }
   }
 
   return (
@@ -237,20 +267,23 @@ function App() {
             <Dashboard
               userId={currentUserId}
               habitLogCount={habitLogCount}
-              onNavigate={(page) => {
+              groupActivities={groupActivities}
+              onNavigate={(page, options) => {
                 const destinations = {
                   dashboard: "Dashboard",
                   habits: "Habits",
                   groups: "Groups",
                   analytics: "Analytics",
                 };
-                goTo(destinations[page] || "Dashboard");
+                goTo(destinations[page] || "Dashboard", options);
               }}
             />
           ) : currentPage === "Habits" ? (
             <HabitManagement
               currentUserId={currentUserId}
               onHabitLogged={incrementHabitLogCount}
+              navigationOptions={habitNavigationOptions}
+              onClearNavigationOptions={() => setHabitNavigationOptions(null)}
             />
           ) : currentPage === "Groups" ? (
             activeGroup ? (
@@ -267,6 +300,7 @@ function App() {
                   groupId={activeGroup.groupId}
                   groupName={activeGroup.groupName}
                   onNotify={addNotification}
+                  onActivity={addGroupActivity}
                 />
               </div>
             ) : (

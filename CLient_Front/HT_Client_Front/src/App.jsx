@@ -19,7 +19,7 @@ function todayAsInputValue() {
 }
 
 /** Renders the habit dashboard and manages its forms and API requests. */
-export default function App({ currentUserId, onHabitLogged }) {
+export default function App({ currentUserId, onHabitLogged, navigationOptions, onClearNavigationOptions }) {
   const [userId, setUserId] = useState('');
   const [habits, setHabits] = useState([]);
   const [habitView, setHabitView] = useState('active');
@@ -35,6 +35,20 @@ export default function App({ currentUserId, onHabitLogged }) {
   const [incrementingHabit, setIncrementingHabit] = useState(null);
   const [incrementForm, setIncrementForm] = useState({ value: '' });
   const [isIncrementing, setIsIncrementing] = useState(false);
+
+  useEffect(() => {
+    if (!navigationOptions) return;
+    if (navigationOptions.action === 'create') {
+      openCreateModal();
+    } else if (navigationOptions.filter === 'snoozed') {
+      setHabitView('snoozed');
+    } else if (navigationOptions.filter === 'rest') {
+      setHabitView('rest');
+    } else if (navigationOptions.filter === 'active') {
+      setHabitView('active');
+    }
+    onClearNavigationOptions?.();
+  }, [navigationOptions]);
 
   useEffect(() => {
   async function loadHabits() {
@@ -132,8 +146,12 @@ async function logSnoozeDay(habit) {
   /** Switches the displayed habit status and reloads the list. */
   async function changeHabitView(view) {
     if (view === habitView) return;
+    const wasArchived = habitView === 'archived';
+    const isNowArchived = view === 'archived';
     setHabitView(view);
-    await loadHabits(view);
+    if (isNowArchived || wasArchived) {
+      await loadHabits(view === 'archived' ? 'archived' : 'active');
+    }
   }
 
   /** Opens an empty form for creating a habit. */
@@ -343,6 +361,16 @@ async function logSnoozeDay(habit) {
     }
   }
 
+  const displayedHabits = habits.filter((habit) => {
+    if (habitView === 'snoozed') {
+      return habit.StatusOfHabit === 'SNOOZED';
+    }
+    if (habitView === 'rest') {
+      return habit.StatusOfHabit === 'REST_DAY';
+    }
+    return true;
+  });
+
   return (
     <div className="habit-app-shell">
       <h1 className="page-title">My habits</h1>
@@ -357,6 +385,24 @@ async function logSnoozeDay(habit) {
             onClick={() => changeHabitView('active')}
           >
             Active
+          </button>
+          <button
+            className={`tab ${habitView === 'snoozed' ? 'tab--active' : ''}`}
+            type="button"
+            role="tab"
+            aria-selected={habitView === 'snoozed'}
+            onClick={() => changeHabitView('snoozed')}
+          >
+            Snoozed
+          </button>
+          <button
+            className={`tab ${habitView === 'rest' ? 'tab--active' : ''}`}
+            type="button"
+            role="tab"
+            aria-selected={habitView === 'rest'}
+            onClick={() => changeHabitView('rest')}
+          >
+            Rest Day
           </button>
           <button
             className={`tab ${habitView === 'archived' ? 'tab--active' : ''}`}
@@ -380,15 +426,18 @@ async function logSnoozeDay(habit) {
         <p className="state-message">Create a user before adding habits.</p>
       )}
 
-      {!loading && !error && userId && habits.length === 0 && (
+      {!loading && !error && userId && displayedHabits.length === 0 && (
         <p className="state-message">
-          No {habitView} habits yet.{habitView === 'active' && ' Create your first one.'}
+          {habitView === 'snoozed' && 'No snoozed habits today.'}
+          {habitView === 'rest' && 'No rest day habits today.'}
+          {habitView === 'active' && 'No active habits yet. Create your first one.'}
+          {habitView === 'archived' && 'No archived habits.'}
         </p>
       )}
 
-      {!loading && habits.length > 0 && (
+      {!loading && displayedHabits.length > 0 && (
         <div className="habit-list">
-          {habits.map((habit) => {
+          {displayedHabits.map((habit) => {
             const status = habit.StatusOfHabit;
             const isCompleted = status === 'COMPLETED';
             const isSnoozed   = status === 'SNOOZED';

@@ -15,12 +15,13 @@ import StreakHeatmap from './StreakHeatmap';
  *
  * Styling lives in Main_Frontend/src/styles/tokens.css (hf- classes).
  */
-export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
+export default function Dashboard({ userId, onNavigate, habitLogCount = 0, groupActivities = [] }) {
   // Compute active month string (YYYY-MM) for calendar/heatmap utilities
   const month = new Date().toISOString().slice(0, 7);
 
   // --- STATE HOOKS ---
   const [progress, setProgress] = useState(null);
+  const [habitsList, setHabitsList] = useState([]);
   const [streaks, setStreaks] = useState(null);
   const [summary, setSummary] = useState(null);
   const [heatmap, setHeatmap] = useState(null);
@@ -35,14 +36,16 @@ export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
 
     async function loadDashboardData() {
       try {
-        // Fetch all independent dashboard widgets and heatmap data concurrently.
-        // NOTE: the order here is the order tests must mock responses in.
-        const [progressSummary, currentStreaks, heatmapData, groupActivity, summaryStats] = await Promise.all([
+        // Fetch all independent dashboard widgets, heatmap data, and live active habits.
+        const [progressSummary, currentStreaks, heatmapData, groupActivity, summaryStats, userHabits] = await Promise.all([
           dashboardApi.getProgressSummary(userId),
           dashboardApi.getStreaks(userId),
           analyticsApi.getHeatmap(userId, month),
           dashboardApi.getGroupActivity(userId, 5),
           analyticsApi.getSummary(userId),
+          fetch(`/api/users/${userId}/habits?archived=false`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
         ]);
 
         if (cancelled) return;
@@ -52,6 +55,7 @@ export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
         setHeatmap(heatmapData);
         setActivity(groupActivity);
         setSummary(summaryStats);
+        setHabitsList(Array.isArray(userHabits) ? userHabits : []);
       } catch (err) {
         if (!cancelled) setError(err.message);
       }
@@ -65,11 +69,54 @@ export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
   }, [userId, month, habitLogCount]);
 
   // --- DYNAMIC DATA CALCULATIONS ---
-  const progressEntries = progress ? Object.entries(progress) : [];
+  // If we have live habits from the habit tracking API, calculate today's progress using currValue / targetValue
+  const progressEntries = habitsList.length > 0
+    ? habitsList.map((habit) => {
+        const target = habit.targetValue || 1;
+        const current = habit.currValue || 0;
+        const isCompleted = habit.StatusOfHabit === 'COMPLETED';
+        const isRest = habit.StatusOfHabit === 'REST_DAY';
+        const isSnoozed = habit.StatusOfHabit === 'SNOOZED';
+
+        let rate = 0;
+        if (isCompleted || isRest) {
+          rate = 100;
+        } else if (current > 0) {
+          rate = Math.min(100, Math.round((current / target) * 100));
+        } else if (progress && progress[habit.title] !== undefined) {
+          rate = Math.round(progress[habit.title]);
+        }
+
+        return {
+          id: habit.habitId,
+          name: habit.title,
+          rate,
+          current,
+          target,
+          unit: habit.targetUnit,
+          isCompleted,
+          isRest,
+          isSnoozed,
+        };
+      })
+    : progress
+    ? Object.entries(progress).map(([name, rate]) => ({
+        id: name,
+        name,
+        rate: Math.round(rate),
+        current: 0,
+        target: 100,
+        unit: '%',
+        isCompleted: rate === 100,
+        isRest: false,
+        isSnoozed: false,
+      }))
+    : [];
+
   const totalHabits = progressEntries.length;
-  const completedHabitsCount = progressEntries.filter(([_, rate]) => rate === 100).length;
+  const completedHabitsCount = progressEntries.filter((h) => h.rate === 100).length;
   const overallPercentage = totalHabits > 0
-    ? Math.round(progressEntries.reduce((acc, [_, rate]) => acc + rate, 0) / totalHabits)
+    ? Math.round(progressEntries.reduce((acc, h) => acc + h.rate, 0) / totalHabits)
     : 0;
 
   // getCurrentStreaks() returns { habitId: streakLength } as plain numbers, so the
@@ -84,6 +131,9 @@ export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
   // the streak that is running right now (also covers the moment before the summary loads).
   const allTimeBestStreak = summary?.highestStreak ?? 0;
   const bestHighestStreak = Math.max(allTimeBestStreak, bestCurrentStreak);
+
+  // Use groupActivities from session if the database activity table has no events yet
+  const displayActivities = (activity && activity.length > 0) ? activity : groupActivities;
 
   return (
     <div className="hf-page">
@@ -120,32 +170,34 @@ export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
             <p className="hf-empty-state">No active habits yet. Add one to get started.</p>
           )}
 
-          {progressEntries.map(([habitName, completionRate]) => (
-            <div className="hf-habit-row" key={habitName}>
+          {progressEntries.map((habitItem) => (
+            <div className="hf-habit-row" key={habitItem.name}>
               <label className="hf-habit-name">
-                <input type="checkbox" defaultChecked={completionRate === 100} />
-                <span>{habitName}</span>
+                <input type="checkbox" checked={habitItem.rate === 100} readOnly />
+                <span>{habitItem.name}</span>
               </label>
 
               <div className="hf-progress-track">
-                <div className="hf-progress-fill" style={{ width: `${completionRate}%` }} />
+                <div className="hf-progress-fill" style={{ width: `${habitItem.rate}%` }} />
               </div>
 
               <div className="hf-habit-actions">
-                <span className="hf-pct">{completionRate}%</span>
+                <span className="hf-pct">{habitItem.rate}%</span>
                 <button
                   type="button"
-                  className="btn btn--outline btn--sm"
-                  onClick={() => onNavigate && onNavigate('habits')}
+                  className={`btn btn--outline btn--sm ${habitItem.isSnoozed ? 'btn--snooze' : ''}`}
+                  onClick={() => onNavigate && onNavigate('habits', { filter: 'snoozed' })}
+                  title="Filter or log snoozed habits"
                 >
-                  Snooze
+                  {habitItem.isSnoozed ? 'Snoozed' : 'Snooze'}
                 </button>
                 <button
                   type="button"
                   className="btn btn--primary btn--sm"
                   onClick={() => onNavigate && onNavigate('habits')}
+                  disabled={habitItem.isCompleted}
                 >
-                  Log
+                  {habitItem.isCompleted ? 'Done' : 'Log'}
                 </button>
               </div>
             </div>
@@ -155,22 +207,23 @@ export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
             <span
               className="hf-chip"
               style={{ cursor: 'pointer' }}
-              onClick={() => onNavigate && onNavigate('habits')}
-              title="View snoozed habits"
+              onClick={() => onNavigate && onNavigate('habits', { filter: 'snoozed' })}
+              title="Filter snoozed habits"
             >
               Snooze
             </span>
             <span
               className="hf-chip"
               style={{ cursor: 'pointer' }}
-              onClick={() => onNavigate && onNavigate('habits')}
-              title="Log a rest day"
+              onClick={() => onNavigate && onNavigate('habits', { filter: 'rest' })}
+              title="Filter rest day habits"
             >
               Rest Day Mode
             </span>
             <span
               className="hf-link-action"
-              onClick={() => onNavigate && onNavigate('habits')}
+              onClick={() => onNavigate && onNavigate('habits', { action: 'create' })}
+              title="Create a new habit"
             >
               + Add Habit
             </span>
@@ -228,18 +281,18 @@ export default function Dashboard({ userId, onNavigate, habitLogCount = 0 }) {
         </div>
 
         <p className="hf-eyebrow">
-          RECENT UPDATES {activity ? `(${activity.length})` : ''}
+          RECENT UPDATES {displayActivities ? `(${displayActivities.length})` : ''}
         </p>
 
-        {activity === null && !error && <p className="hf-empty-state">Loading activity...</p>}
-        {activity && activity.length === 0 && (
+        {displayActivities === null && !error && <p className="hf-empty-state">Loading activity...</p>}
+        {displayActivities && displayActivities.length === 0 && (
           <p className="hf-empty-state">No recent activity from your groups.</p>
         )}
 
-        {activity && (
+        {displayActivities && displayActivities.length > 0 && (
           <div className="hf-list">
-            {activity.map((event) => (
-              <div className="hf-list-item" key={event.activityId}>
+            {displayActivities.map((event, idx) => (
+              <div className="hf-list-item" key={event.activityId || idx}>
                 <span>{event.message}</span>
                 <span className="hf-list-item__time">
                   {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

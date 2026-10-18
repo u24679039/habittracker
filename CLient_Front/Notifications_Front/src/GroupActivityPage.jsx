@@ -6,13 +6,13 @@ import React from "react";
 import ActivityFeedLiveDemo from "./ActivityFeedLiveDemo";
 
 /**
- * @param {{groupName?: string}} props
+ * @param {{groupName?: string, groupId?: any, onNotify?: (message: string) => void, onActivity?: (entry: any) => void}} props
  */
-function GroupActivityPage({ groupName = "Alpha Squad" }) {
+function GroupActivityPage({ groupName = "Alpha Squad", groupId, onNotify, onActivity }) {
   return (
     <div className="group-activity-page">
       <h2 className="group-activity-page__title">{groupName} — Activity</h2>
-      <ActivityFeedLiveDemo />
+      <ActivityFeedLiveDemo onNotify={onNotify} onActivity={onActivity} />
     </div>
   );
 }
