@@ -4,6 +4,7 @@
  * Run with: npx prisma db seed
  * (or directly: node prisma/seed.js)
  */
+const bcrypt = require('bcrypt');
 require("dotenv").config();
 const  prisma  = require('./client');
 const Habit = require('../HabitTracking/Habit');
@@ -91,14 +92,17 @@ async function createHabitWithHistory(userId, def) {
 }
 
 async function seedDemoTeam() {
+  const hashedPassword1 = await bcrypt.hash('demo1', 10);
+  const hashedPassword2 = await bcrypt.hash('demo2', 10);
+  const hashedPassword3 = await bcrypt.hash('demo3', 10);
   const demo = await prisma.user.create({
-    data: { name: 'Demo Student', email: DEMO_EMAILS[0], passwordHash: 'seed-only', role: 'USER' },
+    data: { name: 'Demo Student', email: DEMO_EMAILS[0], passwordHash: hashedPassword1, role: 'USER' },
   });
   const alex = await prisma.user.create({
-    data: { name: 'Alex Rivera', email: DEMO_EMAILS[1], passwordHash: 'seed-only', role: 'USER' },
+    data: { name: 'Alex Rivera', email: DEMO_EMAILS[1], passwordHash: hashedPassword2, role: 'USER' },
   });
   const jordan = await prisma.user.create({
-    data: { name: 'Jordan Kim', email: DEMO_EMAILS[2], passwordHash: 'seed-only', role: 'USER' },
+    data: { name: 'Jordan Kim', email: DEMO_EMAILS[2], passwordHash: hashedPassword3, role: 'USER' },
   });
 
   const group = await prisma.accountabilityGroup.create({
