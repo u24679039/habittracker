@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from "react";
 // Shared application shell. All styling lives in styles/tokens.css.
 const pages = ["Dashboard", "Habits", "Groups", "Analytics"];
 const PROFILE_PAGE = "Profile & Settings";
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 /**
  * Notifications dropdown. Opens on hover (mouse only) or click/tap, and closes
@@ -107,14 +107,46 @@ function NotificationsMenu({ items = [], unreadCount = 0, onOpen, onViewAll }) {
             {items.length === 0 ? (
               <p className="notif__empty">You have no recent notifications.</p>
             ) : (
-              <ul className="notif__list">
-                {items.map((item) => (
-                  <li className="notif__item" key={item.id}>
-                    {item.message}
-                    {item.time && <small>{item.time}</small>}
-                  </li>
-                ))}
-              </ul>
+              <div className="notif__content-scroll" style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                {(() => {
+                  const hasGroups = items.some((item) => item.groupName);
+                  if (!hasGroups) {
+                    return (
+                      <ul className="notif__list">
+                        {items.map((item) => (
+                          <li className="notif__item" key={item.id}>
+                            {item.message}
+                            {item.time && <small>{item.time}</small>}
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  }
+                  // Group by groupName
+                  const groupsMap = items.reduce((acc, item) => {
+                    const g = item.groupName || "General";
+                    if (!acc[g]) acc[g] = [];
+                    acc[g].push(item);
+                    return acc;
+                  }, {});
+
+                  return Object.entries(groupsMap).map(([gName, gItems]) => (
+                    <div key={gName} className="notif__group-section" style={{ borderBottom: '1px solid var(--line)' }}>
+                      <div style={{ padding: '8px 16px', background: 'var(--surface-sunken)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--olive)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {gName}
+                      </div>
+                      <ul className="notif__list">
+                        {gItems.map((item) => (
+                          <li className="notif__item" key={item.id}>
+                            {item.message}
+                            {item.time && <small>{item.time}</small>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ));
+                })()}
+              </div>
             )}
             {onViewAll && (
               <button
@@ -238,10 +270,12 @@ function App() {
           return response.json();
         }));
         if (cancelled) return;
-        const activities = responses.flatMap((result) => {
+        const activities = responses.flatMap((result, idx) => {
           if (result.status !== "fulfilled") return [];
           const value = result.value;
-          return Array.isArray(value) ? value : Array.isArray(value?.entries) ? value.entries : Array.isArray(value?.feed) ? value.feed : Array.isArray(value?.activities) ? value.activities : [];
+          const groupName = groups[idx]?.name || "Group";
+          const list = Array.isArray(value) ? value : Array.isArray(value?.entries) ? value.entries : Array.isArray(value?.feed) ? value.feed : Array.isArray(value?.activities) ? value.activities : [];
+          return list.map((item) => ({ ...item, groupName }));
         });
         const milestones = activities
           .filter((entry) => entry.type === "milestone" && String(entry.userId) === String(currentUserId))
@@ -255,6 +289,7 @@ function App() {
         }).slice(0, 5).map((entry, index) => ({
           id: `${entry.userId}-${entry.message}-${index}`,
           message: entry.message,
+          groupName: entry.groupName || "Group",
           time: entry.timestamp ? new Date(entry.timestamp).toLocaleDateString() : "",
         }));
         setRecentNotifications(items);

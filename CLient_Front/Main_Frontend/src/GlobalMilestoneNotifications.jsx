@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import MilestoneToast from "../../Notifications_Front/src/MilestoneToast";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 const POLL_MS = 5000;
 
 export default function GlobalMilestoneNotifications({ userId }) {

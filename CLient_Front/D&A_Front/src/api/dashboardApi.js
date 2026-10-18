@@ -48,6 +48,46 @@ export const analyticsApi = {
   getTrend: (userId, from, to) => get('/analytics/trend', userId, { from, to }),
   getHeatmap: (userId, month) => get('/analytics/heatmap', userId, { month }),
   getBreakdown: (userId) => get('/analytics/breakdown', userId),
-  exportCsvUrl: (userId) => `${API_BASE}/api/analytics/export.csv?userId=${userId}`,
-  exportPdfUrl: (userId, month) => `${API_BASE}/api/analytics/export.pdf?userId=${userId}&month=${month}`,
+  exportCsvUrl: (userId) => {
+    const token = localStorage.getItem('token');
+    const authParam = token ? `&token=${encodeURIComponent(token)}` : '';
+    return `${API_BASE}/api/analytics/export.csv?userId=${userId}${authParam}`;
+  },
+  exportPdfUrl: (userId, month) => {
+    const token = localStorage.getItem('token');
+    const authParam = token ? `&token=${encodeURIComponent(token)}` : '';
+    return `${API_BASE}/api/analytics/export.pdf?userId=${userId}&month=${month}${authParam}`;
+  },
+  downloadCsv: async (userId) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/api/analytics/export.csv?userId=${userId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Failed to export CSV');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'habittracker-analytics.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+  downloadPdf: async (userId, month) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/api/analytics/export.pdf?userId=${userId}&month=${month}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Failed to export PDF');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'habittracker-analytics.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };

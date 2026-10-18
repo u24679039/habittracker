@@ -18,7 +18,7 @@ import { parseFeedEntries } from "./feedDisplayHelpers";
 
 // Where the backend lives. Can be changed without touching this file by
 // setting VITE_API_URL; otherwise it assumes the combined server on 3000.
-const DEFAULT_API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const DEFAULT_API_BASE = import.meta.env.VITE_API_URL || "";
 
 /**
  * Shows the live activity feed for one group.

@@ -17,7 +17,7 @@
 import React, { useState, useEffect } from "react";
 import { formatRelativeTime, parseFeedEntries } from "./feedDisplayHelpers";
 
-const DEFAULT_API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const DEFAULT_API_BASE = import.meta.env.VITE_API_URL || "";
 
 /**
  * @param {{groups?: Array<{groupId: number, name: string}>, userId: number, apiBase?: string}} props
@@ -65,6 +65,18 @@ function SocialTab({ groups = [], userId, apiBase = DEFAULT_API_BASE }) {
     };
   }, [groups, userId, apiBase]);
 
+  // Group notifications by groupName
+  const groupedNotifications = notifications.reduce((acc, item) => {
+    const groupTitle = item.groupName || "General Updates";
+    if (!acc[groupTitle]) {
+      acc[groupTitle] = [];
+    }
+    acc[groupTitle].push(item);
+    return acc;
+  }, {});
+
+  const groupNames = Object.keys(groupedNotifications);
+
   return (
     <div className="group-activity-page">
       <h2 className="group-activity-page__title">Notifications</h2>
@@ -76,24 +88,36 @@ function SocialTab({ groups = [], userId, apiBase = DEFAULT_API_BASE }) {
           No milestones yet — keep your streaks going!
         </p>
       ) : (
-        <ul className="activity-feed">
-          {notifications.map((entry, index) => (
-            <li key={index} className="activity-feed__item activity-feed__item--milestone">
-              <span className="activity-feed__avatar" aria-hidden="true">
-                🔥
-              </span>
-              <div className="activity-feed__content">
-                <p className="activity-feed__message">
-                  <span className="activity-feed__badge">🔥 Milestone</span>
-                  {entry.message} — {entry.groupName}
-                </p>
-                <span className="activity-feed__time">
-                  {formatRelativeTime(entry.timestamp)}
+        <div className="notif-groups-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {groupNames.map((groupName) => (
+            <div key={groupName} className="notif-group-card activity-feed-card" style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: '10px', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--olive-deep)' }}>{groupName}</h3>
+                <span className="badge" style={{ background: 'var(--sage-soft)', color: 'var(--olive)', fontSize: '0.75rem', fontWeight: 600, padding: '3px 10px', borderRadius: '999px' }}>
+                  {groupedNotifications[groupName].length} {groupedNotifications[groupName].length === 1 ? 'update' : 'updates'}
                 </span>
               </div>
-            </li>
+              <ul className="activity-feed">
+                {groupedNotifications[groupName].map((entry, index) => (
+                  <li key={index} className="activity-feed__item activity-feed__item--milestone">
+                    <span className="activity-feed__avatar" aria-hidden="true">
+                      🔥
+                    </span>
+                    <div className="activity-feed__content">
+                      <p className="activity-feed__message">
+                        <span className="activity-feed__badge">🔥 Milestone</span>
+                        {entry.message}
+                      </p>
+                      <span className="activity-feed__time">
+                        {formatRelativeTime(entry.timestamp)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

@@ -28,6 +28,7 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
   const [heatmap, setHeatmap] = useState(null);
   const [breakdown, setBreakdown] = useState(null);
   const [error, setError] = useState(null);
+  const [exportError, setExportError] = useState(null);
 
   useEffect(() => {
     // Guards against React race conditions on unmount or userId changes
@@ -48,7 +49,7 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
         if (cancelled) return;
 
         const habitsList = Array.isArray(userHabits) ? userHabits : [];
-        
+
         // Calculate today's active progress from habit records (e.g. increments)
         const habitsToday = habitsList.map((h) => {
           const target = h.targetValue || 1;
@@ -142,6 +143,21 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
     };
   }, [userId, weekAgo, today, month, habitLogCount]);
 
+  /**
+   * Downloads the CSV/PDF export. These use fetch() with the Authorization
+   * header (see downloadCsv/downloadPdf in dashboardApi.js) instead of a plain
+   * <a href>, because a normal link navigation can't send the auth header.
+   */
+  async function handleExport(kind) {
+    setExportError(null);
+    try {
+      if (kind === 'csv') await analyticsApi.downloadCsv(userId);
+      else await analyticsApi.downloadPdf(userId, month);
+    } catch (err) {
+      setExportError(err.message);
+    }
+  }
+
   // Organize breakdown into active, rest day, and snoozed groups
   const activeHabits = Array.isArray(breakdown)
     ? breakdown.filter((h) => h.status !== 'REST_DAY' && h.status !== 'SNOOZED')
@@ -159,16 +175,25 @@ export default function Analytics({ userId, habitLogCount = 0 }) {
       <div className="hf-page-header">
         <h1>Analytics</h1>
         <div className="hf-page-header__actions">
-          <a href={analyticsApi.exportCsvUrl(userId)} className="btn btn--outline btn--sm">
+          <button
+            type="button"
+            className="btn btn--outline btn--sm"
+            onClick={() => handleExport('csv')}
+          >
             Export CSV
-          </a>
-          <a href={analyticsApi.exportPdfUrl(userId, month)} className="btn btn--outline btn--sm">
+          </button>
+          <button
+            type="button"
+            className="btn btn--outline btn--sm"
+            onClick={() => handleExport('pdf')}
+          >
             Export PDF
-          </a>
+          </button>
         </div>
       </div>
 
       {error && <div className="hf-error-banner">Couldn't load analytics: {error}</div>}
+      {exportError && <div className="hf-error-banner">Export failed: {exportError}</div>}
 
       {/* Top Stat Cards - identical styling to dashboard */}
       <div className="hf-grid hf-grid--stats">

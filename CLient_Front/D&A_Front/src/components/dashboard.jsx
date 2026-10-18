@@ -34,6 +34,7 @@ export default function Dashboard({
   const [heatmap, setHeatmap] = useState(null);
   const [activity, setActivity] = useState(null);
   const [error, setError] = useState(null);
+  const [exportError, setExportError] = useState(null);
 
   // In-place filtering: 'active' | 'snoozed' | 'rest'
   const [dashboardFilter, setDashboardFilter] = useState('active');
@@ -210,6 +211,18 @@ export default function Dashboard({
   });
 
   // --- ACTIONS ---
+  // Download the monthly PDF. Uses fetch() with the Authorization header
+  // (see downloadPdf in dashboardApi.js) because a plain <a href> link
+  // can't send the auth header and the backend rejects it.
+  async function handleExportPdf() {
+    setExportError(null);
+    try {
+      await analyticsApi.downloadPdf(userId, month);
+    } catch (err) {
+      setExportError(err.message);
+    }
+  }
+
   // Autocomplete habit when checkbox is clicked
   async function handleToggleComplete(habitItem) {
     if (habitItem.isCompleted) return;
@@ -344,8 +357,9 @@ export default function Dashboard({
         <h1>Daily Habits</h1>
       </div>
 
-      {/* Conditional Error Banner */}
+      {/* Conditional Error Banners */}
       {error && <div className="hf-error-banner">Couldn't load your dashboard: {error}</div>}
+      {exportError && <div className="hf-error-banner">Export failed: {exportError}</div>}
 
       {/* Top grid: Daily Habits (wider) & Streaks/Heatmap (narrower) */}
       <div className="hf-grid hf-dashboard-grid">
@@ -486,23 +500,7 @@ export default function Dashboard({
 
         {/* --- RIGHT COLUMN: HEATMAP & STREAK METRICS --- */}
         <div className="hf-stack">
-          {/* Monthly Streak Heatmap Card with Export Button Utility */}
-          <section className="hf-card">
-            <div className="hf-section-head">
-              <h4>Your Recent Activity</h4>
-              <a className="btn btn--outline btn--sm" href={analyticsApi.exportPdfUrl(userId, month)}>
-                Export PDF
-              </a>
-            </div>
-
-            <div className="hf-heatmap-panel">
-              <p className="hf-heatmap-panel__title">This Month's Progress</p>
-              {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
-              {heatmap && <StreakHeatmap month={month} data={heatmap} totalHabits={totalHabits} />}
-            </div>
-          </section>
-
-          {/* Current and Highest Streak Metrics */}
+          {/* Current and Highest Streak Metrics (above heatmap) */}
           <div className="hf-grid hf-grid--stats" style={{ marginBottom: 0 }}>
             <section className="hf-card hf-stat-card">
               <p className="hf-stat-label">Current Streak</p>
@@ -520,6 +518,26 @@ export default function Dashboard({
               </p>
             </section>
           </div>
+
+          {/* Monthly Streak Heatmap Card with Export Button Utility */}
+          <section className="hf-card">
+            <div className="hf-section-head">
+              <h4>Your Recent Activity</h4>
+              <button
+                type="button"
+                className="btn btn--outline btn--sm"
+                onClick={handleExportPdf}
+              >
+                Export PDF
+              </button>
+            </div>
+
+            <div className="hf-heatmap-panel hf-heatmap-panel--compact">
+              <p className="hf-heatmap-panel__title">This Month's Progress</p>
+              {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
+              {heatmap && <StreakHeatmap month={month} data={heatmap} totalHabits={totalHabits} />}
+            </div>
+          </section>
         </div>
       </div>
 
@@ -545,18 +563,51 @@ export default function Dashboard({
           <p className="hf-empty-state">No recent activity from your groups.</p>
         )}
 
-        {displayActivities && displayActivities.length > 0 && (
-          <div className="hf-list">
-            {displayActivities.map((event, idx) => (
-              <div className="hf-list-item" key={event.activityId || idx}>
-                <span>{event.message}</span>
-                <span className="hf-list-item__time">
-                  {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        {displayActivities && displayActivities.length > 0 && (() => {
+          // Group activities by group name
+          const grouped = displayActivities.reduce((acc, event) => {
+            const gName = event.groupName || event.group || "General Group";
+            if (!acc[gName]) acc[gName] = [];
+            acc[gName].push(event);
+            return acc;
+          }, {});
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {Object.entries(grouped).map(([groupTitle, events]) => (
+                <div key={groupTitle} className="hf-group-section">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '4px 0 8px',
+                      borderBottom: '1px dashed var(--line)',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--olive)', letterSpacing: '0.02em' }}>
+                      {groupTitle}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>
+                      {events.length} {events.length === 1 ? 'activity' : 'activities'}
+                    </span>
+                  </div>
+                  <div className="hf-list">
+                    {events.map((event, idx) => (
+                      <div className="hf-list-item" key={event.activityId || idx}>
+                        <span>{event.message}</span>
+                        <span className="hf-list-item__time">
+                          {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </section>
 
       {/* In-place Create Habit Modal */}

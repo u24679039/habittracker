@@ -1180,7 +1180,7 @@ textarea {
   gap: var(--space-4);
 }
 .hf-dashboard-grid {
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr);
   align-items: start;
 }
 .hf-grid--stats {
@@ -1388,6 +1388,24 @@ textarea {
   color: var(--ink-faint);
   font-size: 0.72rem;
   font-weight: 600;
+}
+
+/* Compact dashboard variant only */
+.hf-heatmap-panel--compact .hf-heatmap-panel__title {
+  font-size: 0.76rem;
+}
+.hf-heatmap-panel--compact .hf-heatmap {
+  max-width: 290px;
+  margin: 0 auto;
+  gap: 4px;
+}
+.hf-heatmap-panel--compact .hf-heatmap__cell {
+  border-radius: 4px;
+  font-size: 0.72rem;
+}
+.hf-heatmap-panel--compact .hf-heatmap__label {
+  font-size: 0.68rem;
+  padding-bottom: 2px;
 }
 
 /* Per-habit breakdown grouped sections */
