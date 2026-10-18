@@ -5,6 +5,7 @@
 // Takes a list of feed entries (the exact shape buildGroupFeed, EH-34,
 // produces) and orders them chronologically
 
+
 import React from "react";
 import { formatRelativeTime, getInitials } from "./feedDisplayHelpers";
 
