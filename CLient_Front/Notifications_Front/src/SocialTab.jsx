@@ -35,11 +35,11 @@ function SocialTab({ groups = [], userId, apiBase = DEFAULT_API_BASE }) {
       const results = await Promise.all(
         groups.map(async (group) => {
           try {
-            const response = await fetch(`${apiBase}/api/groups/${group.groupId}/feed`);
+            const response = await fetch(`${apiBase}/api/groups/${group.groupId}/feed`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
             if (!response.ok) return [];
             const data = await response.json();
             return parseFeedEntries(data)
-              .filter((entry) => entry.type === "milestone" && entry.userId === userId)
+              .filter((entry) => entry.type === "milestone" && String(entry.userId) === String(userId))
               .map((entry) => ({ ...entry, groupName: group.name }));
           } catch {
             return []; // one group failing shouldn't blank out the others
@@ -48,7 +48,15 @@ function SocialTab({ groups = [], userId, apiBase = DEFAULT_API_BASE }) {
       );
 
       if (!cancelled) {
-        const merged = results.flat().sort((a, b) => b.timestamp - a.timestamp);
+        const seen = new Set();
+        const merged = results.flat()
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .filter((entry) => {
+            const key = `${entry.userId}|${entry.message}|${String(entry.timestamp || "").slice(0, 10)}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
         setNotifications(merged);
         setLoading(false);
       }

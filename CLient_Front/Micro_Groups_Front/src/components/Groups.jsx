@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
  ***********************************************************************/
 function Groups({
     currentUserId,
+    refreshKey,
     onManageGroup,
     onCreateGroup,
     onJoinGroup,
@@ -113,7 +114,7 @@ function Groups({
     useEffect(() =>
     {
         loadGroups();
-    }, [currentUserId]);
+    }, [currentUserId, refreshKey]);
 
 
     async function copyInvitationCode(invitationCode)
