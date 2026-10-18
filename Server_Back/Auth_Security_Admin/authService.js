@@ -71,7 +71,7 @@ async function login(email, password) {
     }
   });
 
-  if (!user) {
+  if (!user || !user.passwordHash || typeof user.passwordHash !== "string") {
     return {
       success: false,
       message: "Invalid email or password."
