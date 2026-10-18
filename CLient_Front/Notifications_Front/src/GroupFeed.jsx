@@ -14,8 +14,7 @@
 
 import React, { useState, useEffect } from "react";
 import ActivityFeed from "./ActivityFeed";
-import MilestoneToast from "./MilestoneToast";
-import { parseFeedEntries, getRecentMilestones } from "./feedDisplayHelpers";
+import { parseFeedEntries } from "./feedDisplayHelpers";
 
 // Where the backend lives. Can be changed without touching this file by
 // setting VITE_API_URL; otherwise it assumes the combined server on 3000.
@@ -87,7 +86,6 @@ function GroupFeed({ groupId, apiBase = DEFAULT_API_BASE, refreshMs = 10000 }) {
         </p>
       )}
       <ActivityFeed entries={entries} />
-      <MilestoneToast entries={getRecentMilestones(entries)} />
     </div>
   );
 }
