@@ -9,11 +9,18 @@ function App({ currentUserId, onViewActivity })
 {
     const [currentView, setCurrentView] = useState("groups");
     const [selectedGroupId, setSelectedGroupId] = useState(null);
+    const [groupsRefreshKey, setGroupsRefreshKey] = useState(0);
 
     function openGroups()
     {
         setCurrentView("groups");
         setSelectedGroupId(null);
+    }
+
+    function handleJoinSuccess()
+    {
+        setGroupsRefreshKey((previous) => previous + 1);
+        openGroups();
     }
 
     function openGroup(groupId)
@@ -26,6 +33,7 @@ function App({ currentUserId, onViewActivity })
         <div className="micro-groups-app">
             <Groups
                 currentUserId={currentUserId}
+                refreshKey={groupsRefreshKey}
                 onManageGroup={openGroup}
                 onCreateGroup={() => setCurrentView("groupCreation")}
                 onJoinGroup={() => setCurrentView("joinGroup")}
@@ -43,7 +51,7 @@ function App({ currentUserId, onViewActivity })
             {currentView === "joinGroup" && (
                 <JoinGroup
                     currentUserId={currentUserId}
-                    onSuccess={openGroups}
+                    onSuccess={handleJoinSuccess}
                     onClose={openGroups}
                 />
             )}
