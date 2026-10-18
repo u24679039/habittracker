@@ -36,6 +36,7 @@ function mapActivityToFeedEntry(activity) {
   return {
     type: TYPE_MAP[activity.activityType] || "announcement",
     userId: activity.userId,
+    habitId: activity.habitId,
     userName: activity.user ? activity.user.name : "Someone",
     message: activity.message,
     timestamp: activity.timestamp,

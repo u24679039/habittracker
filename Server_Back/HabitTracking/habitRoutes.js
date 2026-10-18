@@ -327,7 +327,7 @@ router.post('/api/habits/:id/log', async (req, res) => {
             return res.status(400).json({ error: 'This habit has already been logged today.' });
         }
         const savedLog = await completedHabit(habitId, date, value, note);
-        await recordHabitCompletion(habitId);
+        await recordHabitCompletion(habitId, savedLog.completedAt);
         res.status(200).json(savedLog);
     } catch (error) {
         res.status(error.statusCode || 500).json({

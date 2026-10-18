@@ -16,7 +16,6 @@
 
 import React, { useState, useEffect } from "react";
 import { formatRelativeTime, parseFeedEntries } from "./feedDisplayHelpers";
-import "./GroupActivityPage.css";
 
 const DEFAULT_API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 

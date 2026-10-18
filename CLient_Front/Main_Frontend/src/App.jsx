@@ -5,21 +5,24 @@ import Dashboard from "../../D&A_Front/src/components/dashboard";
 import Analytics from "../../D&A_Front/src/components/Analytics";
 import Authentication from "../../Auth_Frontend/src/App";
 import GroupActivityPage from "../../Notifications_Front/src/GroupActivityPage";
+import SocialTab from "../../Notifications_Front/src/SocialTab";
+import GlobalMilestoneNotifications from "./GlobalMilestoneNotifications";
 
 import { useEffect, useRef, useState } from "react";
 
 // Shared application shell. All styling lives in styles/tokens.css.
 const pages = ["Dashboard", "Habits", "Groups", "Analytics"];
 const PROFILE_PAGE = "Profile & Settings";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 /**
  * Notifications dropdown. Opens on hover (mouse only) or click/tap, and closes
- * on Escape or an outside click. Pass `items` as [{ id, message, time }] once a
- * notification source exists; with none it shows the empty state.
- * Pass `unreadCount` for the count badge, and `onOpen` to clear the unread count
- * when the panel is opened.
+ * on Escape or an outside click. Pass `items` as [{ id, message, time }]; with
+ * none it shows the empty state. Pass `unreadCount` for the count badge, and
+ * `onOpen` to clear the unread count once the panel has been opened and closed.
+ * `onViewAll` opens the full SocialTab notifications page.
  */
-function NotificationsMenu({ items = [], unreadCount = 0, onOpen }) {
+function NotificationsMenu({ items = [], unreadCount = 0, onOpen, onViewAll }) {
   const [hovering, setHovering] = useState(false);
   const [pinned, setPinned] = useState(false);
   const ref = useRef(null);
@@ -113,6 +116,19 @@ function NotificationsMenu({ items = [], unreadCount = 0, onOpen }) {
                 ))}
               </ul>
             )}
+            {onViewAll && (
+              <button
+                type="button"
+                className="btn btn--text"
+                onClick={() => {
+                  setHovering(false);
+                  setPinned(false);
+                  onViewAll();
+                }}
+              >
+                View all notifications
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -129,6 +145,10 @@ function App() {
     () => Boolean(localStorage.getItem("token"))
   );
   const [activeGroup, setActiveGroup] = useState(null);
+
+  // Groups + milestone notifications fetched from the group feeds (Monal's SocialTab data)
+  const [myGroups, setMyGroups] = useState([]);
+  const [recentNotifications, setRecentNotifications] = useState([]);
 
   // --- Fix 1: Notification & Group Activity state ---
   const [notifications, setNotifications] = useState([]);
@@ -190,6 +210,71 @@ function App() {
   const authVisible = !checkingSession && (!authenticatedUser || showingProfile);
   const headerVisible = Boolean(authenticatedUser || checkingSession);
 
+  // Use the existing group feeds as the data source for Monal's milestones.
+  // Also re-runs when a habit is logged so new milestones appear straight away.
+  useEffect(() => {
+    if (!currentUserId || checkingSession) {
+      setMyGroups([]);
+      setRecentNotifications([]);
+      return;
+    }
+
+    let cancelled = false;
+    async function refreshNotifications() {
+      const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+      try {
+        const membershipsResponse = await fetch(`${API_BASE}/api/groups/user/${currentUserId}`, { headers });
+        if (!membershipsResponse.ok) throw new Error("Could not fetch group memberships");
+        const memberships = await membershipsResponse.json();
+        const groups = memberships.filter((member) => member.group).map((member) => ({
+          groupId: member.group.groupId,
+          name: member.group.name,
+        }));
+        if (cancelled) return;
+        setMyGroups(groups);
+        const responses = await Promise.allSettled(groups.map(async (group) => {
+          const response = await fetch(`${API_BASE}/api/groups/${group.groupId}/feed`, { headers });
+          if (!response.ok) throw new Error(`Could not fetch activity for group ${group.groupId}`);
+          return response.json();
+        }));
+        if (cancelled) return;
+        const activities = responses.flatMap((result) => {
+          if (result.status !== "fulfilled") return [];
+          const value = result.value;
+          return Array.isArray(value) ? value : Array.isArray(value?.entries) ? value.entries : Array.isArray(value?.feed) ? value.feed : Array.isArray(value?.activities) ? value.activities : [];
+        });
+        const milestones = activities
+          .filter((entry) => entry.type === "milestone" && String(entry.userId) === String(currentUserId))
+          .sort((a, b) => new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt));
+        const seen = new Set();
+        const items = milestones.filter((entry) => {
+          const key = `${entry.userId}|${entry.message}|${String(entry.timestamp || entry.createdAt || "").slice(0, 10)}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 5).map((entry, index) => ({
+          id: `${entry.userId}-${entry.message}-${index}`,
+          message: entry.message,
+          time: entry.timestamp ? new Date(entry.timestamp).toLocaleDateString() : "",
+        }));
+        setRecentNotifications(items);
+      } catch (error) {
+        console.error("Notifications unavailable:", error);
+        if (!cancelled) setRecentNotifications([]);
+      }
+    }
+
+    refreshNotifications();
+    const interval = setInterval(refreshNotifications, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [currentUserId, checkingSession, habitLogCount]);
+
+  // Local (in-session) notifications first, then milestone notifications from the feeds.
+  const menuItems = [...notifications, ...recentNotifications].slice(0, 8);
+
   function handleLogout() {
     localStorage.removeItem("token");
     setAuthenticatedUser(null);
@@ -197,6 +282,10 @@ function App() {
     sessionStorage.removeItem("habitTrackerPage");
     setCurrentPage("Dashboard");
     setActiveGroup(null);
+    setMyGroups([]);
+    setRecentNotifications([]);
+    setNotifications([]);
+    setUnreadCount(0);
   }
 
   function goTo(page, options = null) {
@@ -211,6 +300,7 @@ function App() {
 
   return (
     <div className="app-shell">
+      {authenticatedUser && <GlobalMilestoneNotifications key={currentUserId} userId={currentUserId} />}
       {headerVisible && (
         <header className="site-header">
           <div className="brand" aria-label="HabitTracker home">
@@ -233,9 +323,10 @@ function App() {
 
           <div className="header-actions">
             <NotificationsMenu
-              items={notifications}
+              items={menuItems}
               unreadCount={unreadCount}
               onOpen={clearUnread}
+              onViewAll={() => goTo("Notifications")}
             />
 
             <button
@@ -343,6 +434,10 @@ function App() {
             )
           ) : currentPage === "Analytics" ? (
             <Analytics userId={currentUserId} habitLogCount={habitLogCount} />
+          ) : currentPage === "Notifications" ? (
+            <div className="subpage">
+              <SocialTab groups={myGroups} userId={currentUserId} />
+            </div>
           ) : (
             <>
               <h1 className="page-title">{currentPage}</h1>
