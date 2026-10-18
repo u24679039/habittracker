@@ -5,6 +5,9 @@ import React from 'react';
  * Renders a single-month calendar grid, shading each day by how many
  * habits were completed that day. `data` is a { 'YYYY-MM-DD': count } map,
  * as returned by AnalyticsService.getHabitDensityHeatmap.
+ *
+ * Static layout lives in tokens.css (.hf-heatmap*); only the per-day
+ * colour is computed here.
  */
 export default function StreakHeatmap({ month, data }) {
   const days = buildMonthGrid(month);
@@ -12,23 +15,23 @@ export default function StreakHeatmap({ month, data }) {
 
   return (
     <div>
-      <div style={gridStyle}>
+      <div className="hf-heatmap">
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((label) => (
-          <div key={label} style={{ ...cellStyle, color: '#a89f94', fontSize: '0.7rem' }}>
+          <div key={label} className="hf-heatmap__cell hf-heatmap__label">
             {label}
           </div>
         ))}
         {days.map((day, idx) => {
-          if (!day) return <div key={`pad-${idx}`} style={cellStyle} />;
+          if (!day) return <div key={`pad-${idx}`} className="hf-heatmap__cell" />;
           const count = data[day.iso] || 0;
           return (
             <div
               key={day.iso}
+              className="hf-heatmap__cell"
               title={`${day.iso}: ${count} habit${count === 1 ? '' : 's'} completed`}
               style={{
-                ...cellStyle,
                 background: intensityColor(count, maxCount),
-                color: count / maxCount > 0.6 ? '#fff' : '#292420',
+                color: count / maxCount > 0.6 ? '#fff' : 'var(--ink)',
                 fontWeight: 500,
               }}
             >
@@ -63,33 +66,15 @@ function buildMonthGrid(month) {
 }
 
 /**
- * Maps a completed-habit count to a background color, scaling from a warm
- * neutral (0 completions) through increasingly saturated moss green up to
- * `maxCount` (the busiest day in the current dataset) - so the heatmap's
- * color scale is always relative to this specific month's data rather
- * than a fixed absolute scale. The hue/saturation (107°, ~30%) matches the
- * app's --hf-moss token, so "completed" reads consistently as the same
- * green everywhere it appears (progress bars, this heatmap), not two
- * unrelated shades that happen to both be called green.
+ * Maps a completed-habit count to a background colour, scaling from sand
+ * (0 completions) through increasingly saturated olive-sage up to `maxCount`
+ * (the busiest day in the current dataset), so the scale is always relative
+ * to this month's data. The hue (~105) sits next to the app's --olive and
+ * --sage tokens so "completed" reads as the same green everywhere it appears.
  */
 function intensityColor(count, maxCount) {
-  if (count === 0) return '#f1ede5';
+  if (count === 0) return '#ece8da'; // --surface-sunken
   const ratio = Math.min(1, count / maxCount);
   const lightness = 86 - ratio * 54;
-  return `hsl(107, 30%, ${lightness}%)`;
+  return `hsl(105, 24%, ${lightness}%)`;
 }
-
-const gridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(7, 1fr)',
-  gap: '4px',
-};
-
-const cellStyle = {
-  aspectRatio: '1 / 1',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderRadius: '6px',
-  fontSize: '0.75rem',
-};

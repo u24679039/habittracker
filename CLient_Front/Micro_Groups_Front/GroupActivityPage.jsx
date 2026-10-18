@@ -9,7 +9,6 @@
 
 import React from "react";
 import ActivityFeedLiveDemo from "./ActivityFeedLiveDemo";
-import "./GroupActivityPage.css";
 
 /**
  * @param {{groupName?: string}} props

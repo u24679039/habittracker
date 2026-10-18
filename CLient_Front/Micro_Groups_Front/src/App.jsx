@@ -5,8 +5,6 @@ import GroupCreation from "./components/GroupCreation";
 import JoinGroup from "./components/JoinGroup";
 import GroupManagement from "./components/GroupManagement";
 
-import "./App.css";
-
 
 function App({ currentUserId, onViewActivity })
 {
@@ -47,9 +45,10 @@ function App({ currentUserId, onViewActivity })
 
 
             {currentView === "groupManagement" && (
-                <main className="action-page">
+                <div className="action-page">
                     <button
                         type="button"
+                        className="btn btn--text back-link"
                         onClick={openGroups}
                     >
                         ← Back to Groups
@@ -60,14 +59,15 @@ function App({ currentUserId, onViewActivity })
                         currentUserId={currentUserId}
                         onDelete={openGroups}
                     />
-                </main>
+                </div>
             )}
 
 
             {currentView === "groupCreation" && (
-                <main className="action-page">
+                <div className="action-page">
                     <button
                         type="button"
+                        className="btn btn--text back-link"
                         onClick={openGroups}
                     >
                         ← Back to Groups
@@ -76,14 +76,15 @@ function App({ currentUserId, onViewActivity })
                     <GroupCreation
                         currentUserId={currentUserId}
                     />
-                </main>
+                </div>
             )}
 
 
             {currentView === "joinGroup" && (
-                <main className="action-page">
+                <div className="action-page">
                     <button
                         type="button"
+                        className="btn btn--text back-link"
                         onClick={openGroups}
                     >
                         ← Back to Groups
@@ -93,7 +94,7 @@ function App({ currentUserId, onViewActivity })
                         currentUserId={currentUserId}
                         onSuccess={openGroups}
                     />
-                </main>
+                </div>
             )}
 
         </div>

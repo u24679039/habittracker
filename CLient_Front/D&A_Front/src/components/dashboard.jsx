@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { dashboardApi, analyticsApi } from '../api/dashboardApi';
 import StreakHeatmap from './StreakHeatmap';
-import '../styles/tokens.css';
 
 /**
  * Dashboard
- * 
+ *
  * The primary post-login screen (Fig. 19) representing the core user command center.
  * Features:
  * - Today's habit targets with dynamic progress bars and percentage calculation.
@@ -13,6 +12,8 @@ import '../styles/tokens.css';
  * - Current and highest streak calculations pulled directly from backend records.
  * - Monthly streak heatmap visualization and PDF/CSV export actions.
  * - Recent group activity feeds.
+ *
+ * Styling lives in Main_Frontend/src/styles/tokens.css (hf- classes).
  */
 export default function Dashboard({ userId, onNavigate }) {
   // Compute active month string (YYYY-MM) for calendar/heatmap utilities
@@ -67,8 +68,8 @@ export default function Dashboard({ userId, onNavigate }) {
   const progressEntries = progress ? Object.entries(progress) : [];
   const totalHabits = progressEntries.length;
   const completedHabitsCount = progressEntries.filter(([_, rate]) => rate === 100).length;
-  const overallPercentage = totalHabits > 0 
-    ? Math.round(progressEntries.reduce((acc, [_, rate]) => acc + rate, 0) / totalHabits) 
+  const overallPercentage = totalHabits > 0
+    ? Math.round(progressEntries.reduce((acc, [_, rate]) => acc + rate, 0) / totalHabits)
     : 0;
 
   // getCurrentStreaks() returns { habitId: streakLength } as plain numbers, so the
@@ -87,122 +88,95 @@ export default function Dashboard({ userId, onNavigate }) {
   return (
     <div className="hf-page">
       {/* Page Header Section */}
-      <div className="hf-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <h1>Daily Habits</h1>
+      <div className="hf-page-header">
+        <h1>Daily Habits</h1>
       </div>
 
       {/* Conditional Error Banner */}
       {error && <div className="hf-error-banner">Couldn't load your dashboard: {error}</div>}
 
-      {/* Top Main Grid Layout: Daily Habits (wider) & Streaks/Heatmap (narrower) with mobile responsiveness */}
-      <div className="hf-grid hf-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.4fr) minmax(280px, 1fr)', gap: '1.5rem' }}>
-        <style>{`
-          @media (max-width: 900px) {
-            .hf-dashboard-grid {
-              grid-template-columns: 1fr !important;
-            }
-          }
-        `}</style>
-
+      {/* Top grid: Daily Habits (wider) & Streaks/Heatmap (narrower) */}
+      <div className="hf-grid hf-dashboard-grid">
         {/* --- LEFT COLUMN: DAILY HABITS & TARGETS WIDGET --- */}
         <section className="hf-card">
-          <div style={{ background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '50%', border: '4px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem' }}>
-              {overallPercentage}%
+          <div className="hf-target-summary">
+            <div className="hf-ring" style={{ '--pct': overallPercentage }}>
+              <span>{overallPercentage}%</span>
             </div>
             <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem' }}>
+              <h4>
                 {overallPercentage >= 100 ? "Today's targets completed!" : "Today's targets in progress"}
               </h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--hf-ink-muted)' }}>
+              <p>
                 {completedHabitsCount} of {totalHabits} completed
               </p>
             </div>
           </div>
 
-          <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Today's targets</h3>
-          
+          <h3>Today's targets</h3>
+
           {progress === null && !error && <p className="hf-empty-state">Loading habits...</p>}
           {progress && totalHabits === 0 && (
             <p className="hf-empty-state">No active habits yet. Add one to get started.</p>
           )}
-          
+
           {progressEntries.map(([habitName, completionRate]) => (
-            <div className="hf-habit-row" key={habitName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', padding: '0.75rem 0', borderBottom: '1px solid #eee' }}>              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '160px' }}>
-                <input type="checkbox" defaultChecked={completionRate === 100} style={{ cursor: 'pointer' }} />
-                <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{habitName}</span>
+            <div className="hf-habit-row" key={habitName}>
+              <label className="hf-habit-name">
+                <input type="checkbox" defaultChecked={completionRate === 100} />
+                <span>{habitName}</span>
+              </label>
+
+              <div className="hf-progress-track">
+                <div className="hf-progress-fill" style={{ width: `${completionRate}%` }} />
               </div>
-              
-              <div className="hf-progress-track" style={{ flex: 1, minWidth: '100px', margin: '0 1rem', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                <div className="hf-progress-fill" style={{ width: `${completionRate}%`, background: '#333', height: '100%' }} />
-              </div>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)', minWidth: '35px', textAlign: 'right' }}>
-                  {completionRate}%
-                </span>
-                <button 
-                  style={{ padding: '4px 10px', fontSize: '0.8rem', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', transition: 'background 0.2s' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
-                >
-                  Snooze
-                </button>
-                <button 
-                  style={{ padding: '4px 10px', fontSize: '0.8rem', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                >
-                  Log
-                </button>
+
+              <div className="hf-habit-actions">
+                <span className="hf-pct">{completionRate}%</span>
+                <button type="button" className="btn btn--outline btn--sm">Snooze</button>
+                <button type="button" className="btn btn--primary btn--sm">Log</button>
               </div>
             </div>
           ))}
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.8rem', background: '#eee', padding: '4px 8px', borderRadius: '12px', color: '#555' }}>Snooze (1)</span>
-            <span style={{ fontSize: '0.8rem', background: '#eee', padding: '4px 8px', borderRadius: '12px', color: '#555' }}>Rest Day Mode</span>
-            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', marginLeft: 'auto', cursor: 'pointer' }}>+ Add Habit</span>
+          <div className="hf-chip-row">
+            <span className="hf-chip">Snooze (1)</span>
+            <span className="hf-chip">Rest Day Mode</span>
+            <span className="hf-link-action">+ Add Habit</span>
           </div>
         </section>
 
         {/* --- RIGHT COLUMN: HEATMAP & STREAK METRICS --- */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+        <div className="hf-stack">
           {/* Monthly Streak Heatmap Card with Export Button Utility */}
-          <section className="hf-card" style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h4 style={{ margin: 0, fontSize: '1rem' }}>Your Recent Activity</h4>
-              <a 
-                href={analyticsApi.exportPdfUrl(userId, month)} 
-                style={{ padding: '4px 10px', fontSize: '0.8rem', background: '#fff', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', textDecoration: 'none', color: '#333', transition: 'background 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
-              >
+          <section className="hf-card">
+            <div className="hf-section-head">
+              <h4>Your Recent Activity</h4>
+              <a className="btn btn--outline btn--sm" href={analyticsApi.exportPdfUrl(userId, month)}>
                 Export PDF
               </a>
             </div>
-            
-            <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '6px', border: '1px solid #eee', textAlign: 'center', overflowX: 'auto' }}>
-              <p style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>This Month's Progress</p>
+
+            <div className="hf-heatmap-panel">
+              <p className="hf-heatmap-panel__title">This Month's Progress</p>
               {heatmap === null && !error && <p className="hf-empty-state">Loading heatmap...</p>}
               {heatmap && <StreakHeatmap month={month} data={heatmap} />}
             </div>
           </section>
 
-         {/* Current and Highest Streak Metrics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
-            <section className="hf-card" style={{ padding: '1rem', textAlign: 'center' }}>
-              <p className="hf-stat-label" style={{ fontSize: '0.8rem', color: '#666', margin: '0 0 4px 0' }}>Current Streak</p>
-              <p className="hf-stat-value" style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: 0 }}>
-                {bestCurrentStreak} <span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>DAYS</span>
+          {/* Current and Highest Streak Metrics */}
+          <div className="hf-grid hf-grid--stats" style={{ marginBottom: 0 }}>
+            <section className="hf-card hf-stat-card">
+              <p className="hf-stat-label">Current Streak</p>
+              <p className="hf-stat-value">
+                {bestCurrentStreak} <span className="hf-stat-unit">DAYS</span>
               </p>
             </section>
-            
-            <section className="hf-card" style={{ padding: '1rem', textAlign: 'center' }}>
-              <p className="hf-stat-label" style={{ fontSize: '0.8rem', color: '#666', margin: '0 0 4px 0' }}>Highest Streak</p>
-              <p className="hf-stat-value" style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: 0 }}>
-                {bestHighestStreak} <span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>DAYS</span>
+
+            <section className="hf-card hf-stat-card">
+              <p className="hf-stat-label">Highest Streak</p>
+              <p className="hf-stat-value">
+                {bestHighestStreak} <span className="hf-stat-unit">DAYS</span>
               </p>
             </section>
           </div>
@@ -210,20 +184,19 @@ export default function Dashboard({ userId, onNavigate }) {
       </div>
 
       {/* --- BOTTOM SECTION: GROUP ACTIVITY FEED WIDGET --- */}
-      <section className="hf-hero-card" style={{ marginTop: 'var(--hf-space-4)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0 }}>Group Activity</h3>
-          <span 
-            onClick={() => onNavigate && onNavigate('groups')} 
-            style={{ fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', color: '#000', transition: 'opacity 0.2s' }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.6'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+      <section className="hf-hero-card hf-section-gap">
+        <div className="hf-section-head">
+          <h3>Group Activity</h3>
+          <span
+            className="hf-link-action"
+            style={{ marginLeft: 0 }}
+            onClick={() => onNavigate && onNavigate('groups')}
           >
             Browse all →
           </span>
         </div>
-        
-        <p style={{ fontSize: '0.85rem', color: 'var(--hf-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+
+        <p className="hf-eyebrow">
           RECENT UPDATES {activity ? `(${activity.length})` : ''}
         </p>
 
@@ -233,11 +206,11 @@ export default function Dashboard({ userId, onNavigate }) {
         )}
 
         {activity && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
+          <div className="hf-list">
             {activity.map((event) => (
-              <div key={event.activityId} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.9rem' }}>{event.message}</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--hf-ink-muted)' }}>
+              <div className="hf-list-item" key={event.activityId}>
+                <span>{event.message}</span>
+                <span className="hf-list-item__time">
                   {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import './App.css';
 
 const API_URL = 'http://localhost:3000/api';
 
@@ -340,8 +339,8 @@ async function logSnoozeDay(habit) {
   }
 
   return (
-    <main className="habit-app-shell">
-      <h1 className="app-title">My habits</h1>
+    <div className="habit-app-shell">
+      <h1 className="page-title">My habits</h1>
 
       <section className="habit-list-header" aria-label="Habit controls">
         <div className="tabs" role="tablist" aria-label="Habit status">
@@ -617,6 +616,6 @@ async function logSnoozeDay(habit) {
           </section>
         </div>
       )}
-    </main>
+    </div>
   );
 }

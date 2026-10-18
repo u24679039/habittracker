@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Dashboard from './components/dashboard';
 import Analytics from './components/Analytics';
-import './styles/tokens.css';
 
 const DEMO_USER_ID = 5;
 

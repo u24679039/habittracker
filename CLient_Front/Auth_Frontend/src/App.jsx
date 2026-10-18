@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import "./App.css";
 
 function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked }) {
   const [page, setPage] = useState("login");
@@ -504,44 +503,13 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
 
   if (page === "profile" && profile) {
     return (
-      <div className="dashboard">
-        <header className="dashboard-header">
-          <div className="dashboard-brand">
-            <div className="small-logo">✓</div>
+      <div className="profile-page">
 
-            <div>
-              <h1>HabitTracker</h1>
-              <span>
-                Authentication, Security & Admin
-              </span>
-            </div>
-          </div>
-
-          <div className="auth-header-actions">
-            {onBackToDashboard && (
-              <button
-                type="button"
-                className="logout-button"
-                onClick={onBackToDashboard}
-              >
-                &larr; Back to Dashboard
-              </button>
-            )}
-            <button
-              type="button"
-              className="logout-button"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </div>
-        </header>
-
-        <main className="dashboard-content">
+        <div className="profile-content">
           <div className="welcome-card">
             <div>
               <p className="welcome-label">
-                WELCOME BACK
+                Welcome back
               </p>
 
               <h2>{profile.name}</h2>
@@ -552,15 +520,21 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
               </p>
             </div>
 
-            <div className="role-badge">
-              {profile.role}
+            <div className="welcome-card__side">
+              <span className="role-badge">{profile.role}</span>
+              <button
+                type="button"
+                className="btn btn--on-dark btn--sm"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
             </div>
           </div>
 
           <div className="profile-grid">
             <section className="profile-card">
               <div className="card-heading">
-                <div className="card-icon">👤</div>
 
                 <div>
                   <h3>Profile Settings</h3>
@@ -572,7 +546,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 </div>
               </div>
 
-              <form onSubmit={handleProfileUpdate}>
+              <form className="form form--stacked" onSubmit={handleProfileUpdate}>
                 <label>Full name</label>
 
                 <input
@@ -594,7 +568,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 />
 
                 <button
-                  className="primary-button"
+                  className="btn btn--primary"
                   type="submit"
                   disabled={loading}
                 >
@@ -607,7 +581,6 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
 
             <section className="account-card">
               <div className="card-heading">
-                <div className="card-icon">🔒</div>
 
                 <div>
                   <h3>Account Security</h3>
@@ -622,7 +595,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
               <div className="account-information">
                 <div className="info-row">
                   <span>Account ID</span>
-                  <strong>#{profile.id}</strong>
+                  <strong>#{profile.userId ?? profile.id}</strong>
                 </div>
 
                 <div className="info-row">
@@ -643,7 +616,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
 
               <div className="security-box">
                 <strong>
-                  🔐 Role-Based Security
+                  Role-based security
                 </strong>
 
                 <p>
@@ -660,7 +633,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
               <div className="admin-panel-header">
                 <div>
                   <p className="admin-label">
-                    ADMINISTRATOR
+                    Administrator
                   </p>
 
                   <h2>Moderation Panel</h2>
@@ -673,14 +646,14 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
 
                 <div className="admin-actions">
                   <button
-                    className="secondary-button"
+                    className="btn btn--outline"
                     onClick={handleFlagDemoGroup}
                   >
                     Flag Demo Group
                   </button>
 
                   <button
-                    className="primary-button"
+                    className="btn btn--primary"
                     onClick={loadFlaggedGroups}
                   >
                     Refresh Flags
@@ -732,14 +705,14 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                   </p>
                 </div>
               ) : (
-                <div className="group-list">
+                <div className="admin-group-list">
                   {flaggedGroups.map((group) => (
                     <div
-                      className="group-item"
+                      className="admin-group-item"
                       key={group.id}
                     >
-                      <div className="group-details">
-                        <div className="group-title-row">
+                      <div className="admin-group-details">
+                        <div className="admin-group-title-row">
                           <h3>{group.name}</h3>
 
                           <span
@@ -750,8 +723,8 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                             }
                           >
                             {group.reviewed
-                              ? "REVIEWED"
-                              : "PENDING"}
+                              ? "Reviewed"
+                              : "Pending"}
                           </span>
                         </div>
 
@@ -766,10 +739,10 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                         </small>
                       </div>
 
-                      <div className="group-actions">
+                      <div className="admin-group-actions">
                         {!group.reviewed && (
                           <button
-                            className="review-button"
+                            className="btn btn--outline btn--sm"
                             onClick={() =>
                               handleReviewGroup(
                                 group.id
@@ -781,7 +754,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                         )}
 
                         <button
-                          className="remove-button"
+                          className="btn btn--danger btn--sm"
                           onClick={() =>
                             handleRemoveGroup(
                               group.id
@@ -799,7 +772,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
           )}
 
           {message && (
-            <div className="dashboard-message">
+            <div className="alert">
               {message}
             </div>
           )}
@@ -815,14 +788,14 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             </div>
 
             <button
-              className="delete-button"
+              className="btn btn--danger"
               onClick={handleDeleteAccount}
               disabled={loading}
             >
               Delete Account
             </button>
           </section>
-        </main>
+        </div>
       </div>
     );
   }
@@ -835,7 +808,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
     <div className="auth-app">
       <div className="auth-container">
         <div className="brand-section">
-          <div className="logo">✓</div>
+          <div className="auth-logo">✓</div>
 
           <h1>HabitTracker</h1>
 
@@ -848,16 +821,16 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
           </p>
 
           <div className="security-note">
-            🔒 Secure account authentication
+            Secure account authentication
           </div>
         </div>
 
         <div className="form-section">
-          <div className="tabs">
+          <div className="segmented">
             <button
               className={
                 page === "login"
-                  ? "active-tab"
+                  ? "is-active"
                   : ""
               }
               onClick={() => {
@@ -871,7 +844,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             <button
               className={
                 page === "register"
-                  ? "active-tab"
+                  ? "is-active"
                   : ""
               }
               onClick={() => {
@@ -887,11 +860,11 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             <>
               <h2>Welcome back</h2>
 
-              <p className="subtitle">
+              <p className="auth-subtitle">
                 Sign in to continue to HabitTracker.
               </p>
 
-              <form onSubmit={handleLogin}>
+              <form className="form form--stacked" onSubmit={handleLogin}>
                 <label>Email address</label>
 
                 <input
@@ -915,7 +888,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 />
 
                 <button
-                  className="primary-button"
+                  className="btn btn--primary"
                   type="submit"
                   disabled={loading}
                 >
@@ -929,11 +902,11 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
             <>
               <h2>Create account</h2>
 
-              <p className="subtitle">
+              <p className="auth-subtitle">
                 Start tracking your habits today.
               </p>
 
-              <form onSubmit={handleRegister}>
+              <form className="form form--stacked" onSubmit={handleRegister}>
                 <label>Full name</label>
 
                 <input
@@ -968,7 +941,7 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
                 />
 
                 <button
-                  className="primary-button"
+                  className="btn btn--primary"
                   type="submit"
                   disabled={loading}
                 >
@@ -981,14 +954,10 @@ function App({ onAuthenticated, onLogout, onBackToDashboard, onSessionChecked })
           )}
 
           {message && (
-            <div className="message">
+            <div className="alert">
               {message}
             </div>
           )}
-
-          <div className="footer-text">
-            Authentication, Security & Admin
-          </div>
         </div>
       </div>
     </div>
