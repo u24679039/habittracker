@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://YOUR-BACKEND-URL/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://https://epe-habit-track-1011860009455.africa-south1.run.app/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
