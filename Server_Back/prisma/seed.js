@@ -64,23 +64,25 @@ function buildHistory({ days, currentStreak, completionRate }) {
 async function createHabitWithHistory(userId, def) {
   const habit = await prisma.habit.create({
     data: {
-      userId:userId,
-      title: def.name, // Updated from 'name' to 'title' to match DB schema
+      userId: userId,
+      title: def.name,
       targetValue: def.targetValue,
       targetUnit: def.targetUnit,
       frequency: 'DAILY',
+      StatusOfHabit: 'ACTIVE',
+      currValue: 0,
     },
   });
 
   const statuses = buildHistory(def);
-  for (let i = 0; i < statuses.length; i += 1) {
+  for (let i = 1; i <= statuses.length; i += 1) {
     const now = new Date();
     const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
-    const status = statuses[i];
+    const status = statuses[i - 1];
 
     await prisma.habitLog.create({
       data: {
-        userId:userId,
+        userId: userId,
         habitId: habit.habitId,
         completedAt: date,
         value: status === 'COMPLETED' ? def.targetValue : 0,

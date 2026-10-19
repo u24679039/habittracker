@@ -323,9 +323,36 @@ router.post('/api/habits/:id/log', async (req, res) => {
     const { date, value, note } = req.body;
     const targetDate = new Date(date || new Date());
     try {
-        if (await isAlreadyLoggedToday(habitId, targetDate)) {
-            return res.status(400).json({ error: 'This habit has already been logged today.' });
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Check if a log already exists for this date
+        const existingLog = await prisma.habitLog.findFirst({
+            where: {
+                habitId,
+                completedAt: { gte: startOfDay, lte: endOfDay }
+            }
+        });
+
+        if (existingLog) {
+            const habit = await getHabitInstance(habitId);
+            const val = Number(value) || habit.effectiveTargetValue;
+            await prisma.habit.update({
+                where: { habitId },
+                data: { StatusOfHabit: "COMPLETED", currValue: val }
+            });
+            if (existingLog.status !== "COMPLETED" || existingLog.value < val) {
+                await prisma.habitLog.update({
+                    where: { logId: existingLog.logId },
+                    data: { status: "COMPLETED", value: val, note: note || existingLog.note }
+                });
+            }
+            await recordHabitCompletion(habitId, existingLog.completedAt);
+            return res.status(200).json({ message: "Habit completed successfully", log: existingLog });
         }
+
         const savedLog = await completedHabit(habitId, date, value, note);
         await recordHabitCompletion(habitId, savedLog.completedAt);
         res.status(200).json(savedLog);
@@ -405,7 +432,35 @@ router.get('/api/users/:userId/habits', async (req, res) => {
                 createdAt: 'desc'
             }
         });
-        res.status(200).json(habits);
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+
+        // Normalize status for today so seed data or stale status always matches today's logs
+        const syncedHabits = habits.map((h) => {
+            const todayLog = (h.logs || []).find((l) => {
+                const d = new Date(l.completedAt);
+                return d >= todayStart && d <= todayEnd;
+            });
+            if (todayLog) {
+                if (todayLog.status === 'COMPLETED') {
+                    return {
+                        ...h,
+                        StatusOfHabit: 'COMPLETED',
+                        currValue: Math.max(h.currValue || 0, todayLog.value || h.targetValue),
+                    };
+                } else if (todayLog.status === 'REST_DAY') {
+                    return { ...h, StatusOfHabit: 'REST_DAY' };
+                } else if (todayLog.status === 'SNOOZED') {
+                    return { ...h, StatusOfHabit: 'SNOOZED' };
+                }
+            }
+            return h;
+        });
+
+        res.status(200).json(syncedHabits);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch habits' });
     }

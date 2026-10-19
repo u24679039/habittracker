@@ -20,7 +20,7 @@ function todayAsInputValue() {
 }
 
 /** Renders the habit dashboard and manages its forms and API requests. */
-export default function App({ currentUserId, onHabitLogged, navigationOptions, onClearNavigationOptions }) {
+export default function App({ currentUserId, habitLogCount, onHabitLogged, navigationOptions, onClearNavigationOptions }) {
   const [userId, setUserId] = useState('');
   const [habits, setHabits] = useState([]);
   const [habitView, setHabitView] = useState('active');
@@ -87,7 +87,7 @@ export default function App({ currentUserId, onHabitLogged, navigationOptions, o
   }
 
   loadHabits();
-}, [currentUserId]);
+}, [currentUserId, habitLogCount]);
 
 /** Logs a Rest Day for the selected habit. */
 async function logRestDay(habit) {

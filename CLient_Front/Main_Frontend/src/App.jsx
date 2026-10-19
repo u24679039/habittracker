@@ -431,6 +431,7 @@ function App() {
           ) : currentPage === "Habits" ? (
             <HabitManagement
               currentUserId={currentUserId}
+              habitLogCount={habitLogCount}
               onHabitLogged={incrementHabitLogCount}
               navigationOptions={habitNavigationOptions}
               onClearNavigationOptions={() => setHabitNavigationOptions(null)}
