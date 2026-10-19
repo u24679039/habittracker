@@ -334,6 +334,8 @@ function App() {
           // Check if this is a newly arrived unread notification
           if (!seenNotificationKeysRef.current.has(key)) {
             newEntriesCount += 1;
+            // Trigger a global notification for this new activity
+            addNotification(entry.message);
           }
 
           const timeDate = entry.timestamp || entry.createdAt ? new Date(entry.timestamp || entry.createdAt) : null;
