@@ -190,6 +190,29 @@ function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [groupActivities, setGroupActivities] = useState([]);
 
+  /** Helper to load read notification IDs from localStorage */
+  function getReadKeys(userId) {
+    if (!userId) return new Set();
+    try {
+      const stored = localStorage.getItem(`read_notifs_${userId}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  /** Helper to save read notification IDs to localStorage */
+  function saveReadKeys(userId, keysSet) {
+    if (!userId) return;
+    try {
+      // Keep only up to the latest 100 read keys to avoid storage bloat
+      const arr = Array.from(keysSet).slice(-100);
+      localStorage.setItem(`read_notifs_${userId}`, JSON.stringify(arr));
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
   /** Adds a group activity and also mirrors it to the global notifications */
   function addGroupActivity(entry) {
     const message = entry.message || (typeof entry === 'string' ? entry : '');
@@ -209,9 +232,12 @@ function App() {
     setUnreadCount((prev) => prev + 1);
   }
 
-  /** Resets the unread counter when the notification panel is opened. */
+  /** Resets the unread counter and marks all current notifications as read when the panel is opened. */
   function clearUnread() {
     setUnreadCount(0);
+    if (currentUserId && seenNotificationKeysRef.current) {
+      saveReadKeys(currentUserId, seenNotificationKeysRef.current);
+    }
   }
 
   // --- Fix 2: habitLogCount for reactive Dashboard/Analytics refresh ---
@@ -249,6 +275,10 @@ function App() {
       initialLoadDoneRef.current = false;
       return;
     }
+
+    // Load previously marked-as-read notification keys for this user
+    const readKeys = getReadKeys(currentUserId);
+    seenNotificationKeysRef.current = new Set(readKeys);
 
     let cancelled = false;
     async function refreshNotifications() {
@@ -301,11 +331,10 @@ function App() {
           if (seenInBatch.has(key)) continue;
           seenInBatch.add(key);
 
-          // Check if this is a newly arrived notification since last check
-          if (initialLoadDoneRef.current && !seenNotificationKeysRef.current.has(key)) {
+          // Check if this is a newly arrived unread notification
+          if (!seenNotificationKeysRef.current.has(key)) {
             newEntriesCount += 1;
           }
-          seenNotificationKeysRef.current.add(key);
 
           const timeDate = entry.timestamp || entry.createdAt ? new Date(entry.timestamp || entry.createdAt) : null;
           const timeFormatted = timeDate && !isNaN(timeDate.getTime())
@@ -323,11 +352,16 @@ function App() {
 
         if (!initialLoadDoneRef.current) {
           initialLoadDoneRef.current = true;
-          // On first load, if there are recent activities, show unread count (up to 5)
-          setUnreadCount(Math.min(uniqueItems.length, 5));
+          // On first load, only count notifications that have never been read
+          setUnreadCount(newEntriesCount);
         } else if (newEntriesCount > 0) {
           // Increment unread count as new notifications arrive
           setUnreadCount((prev) => prev + newEntriesCount);
+        }
+
+        // Record all received keys in our active session set
+        for (const item of uniqueItems) {
+          seenNotificationKeysRef.current.add(item.id);
         }
 
         setRecentNotifications(uniqueItems.slice(0, 15));
