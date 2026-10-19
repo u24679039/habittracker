@@ -9,6 +9,7 @@ import SocialTab from "../../Notifications_Front/src/SocialTab";
 import GlobalMilestoneNotifications from "./GlobalMilestoneNotifications";
 
 import { useEffect, useRef, useState } from "react";
+import { formatRelativeTime } from "../../Notifications_Front/src/feedDisplayHelpers";
 
 // Shared application shell. All styling lives in styles/tokens.css.
 const pages = ["Dashboard", "Habits", "Groups", "Analytics"];
@@ -233,12 +234,19 @@ function App() {
   const authVisible = !checkingSession && (!authenticatedUser || showingProfile);
   const headerVisible = Boolean(authenticatedUser || checkingSession);
 
-  // Use the existing group feeds as the data source for Monal's milestones.
-  // Also re-runs when a habit is logged so new milestones appear straight away.
+  // Keep track of seen notification keys to know when new ones arrive
+  const seenNotificationKeysRef = useRef(new Set());
+  const initialLoadDoneRef = useRef(false);
+
+  // Use the existing group feeds as the data source for notifications.
+  // Re-runs periodically (10s) and when a habit is logged so new activities appear straight away.
   useEffect(() => {
     if (!currentUserId || checkingSession) {
       setMyGroups([]);
       setRecentNotifications([]);
+      setUnreadCount(0);
+      seenNotificationKeysRef.current.clear();
+      initialLoadDoneRef.current = false;
       return;
     }
 
@@ -255,35 +263,74 @@ function App() {
         }));
         if (cancelled) return;
         setMyGroups(groups);
+
         const responses = await Promise.allSettled(groups.map(async (group) => {
           const response = await fetch(`${API_BASE}/api/groups/${group.groupId}/feed`, { headers });
           if (!response.ok) throw new Error(`Could not fetch activity for group ${group.groupId}`);
           return response.json();
         }));
         if (cancelled) return;
+
         const activities = responses.flatMap((result, idx) => {
           if (result.status !== "fulfilled") return [];
           const value = result.value;
           const groupName = groups[idx]?.name || "Group";
-          const list = Array.isArray(value) ? value : Array.isArray(value?.entries) ? value.entries : Array.isArray(value?.feed) ? value.feed : Array.isArray(value?.activities) ? value.activities : [];
+          const list = Array.isArray(value)
+            ? value
+            : Array.isArray(value?.entries)
+            ? value.entries
+            : Array.isArray(value?.feed)
+            ? value.feed
+            : Array.isArray(value?.activities)
+            ? value.activities
+            : [];
           return list.map((item) => ({ ...item, groupName }));
         });
-        const milestones = activities
-          .filter((entry) => entry.type === "milestone" && String(entry.userId) === String(currentUserId))
-          .sort((a, b) => new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt));
-        const seen = new Set();
-        const items = milestones.filter((entry) => {
-          const key = `${entry.userId}|${entry.message}|${String(entry.timestamp || entry.createdAt || "").slice(0, 10)}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        }).slice(0, 5).map((entry, index) => ({
-          id: `${entry.userId}-${entry.message}-${index}`,
-          message: entry.message,
-          groupName: entry.groupName || "Group",
-          time: entry.timestamp ? new Date(entry.timestamp).toLocaleDateString() : "",
-        }));
-        setRecentNotifications(items);
+
+        // Sort newest first
+        activities.sort(
+          (a, b) => new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt)
+        );
+
+        const seenInBatch = new Set();
+        const uniqueItems = [];
+        let newEntriesCount = 0;
+
+        for (const entry of activities) {
+          const key = `${entry.groupId || ''}|${entry.userId}|${entry.type}|${entry.message}|${String(entry.timestamp || entry.createdAt || '')}`;
+          if (seenInBatch.has(key)) continue;
+          seenInBatch.add(key);
+
+          // Check if this is a newly arrived notification since last check
+          if (initialLoadDoneRef.current && !seenNotificationKeysRef.current.has(key)) {
+            newEntriesCount += 1;
+          }
+          seenNotificationKeysRef.current.add(key);
+
+          const timeDate = entry.timestamp || entry.createdAt ? new Date(entry.timestamp || entry.createdAt) : null;
+          const timeFormatted = timeDate && !isNaN(timeDate.getTime())
+            ? formatRelativeTime(timeDate)
+            : "";
+
+          uniqueItems.push({
+            id: key,
+            message: entry.message,
+            groupName: entry.groupName || "Group",
+            time: timeFormatted,
+            rawDate: timeDate,
+          });
+        }
+
+        if (!initialLoadDoneRef.current) {
+          initialLoadDoneRef.current = true;
+          // On first load, if there are recent activities, show unread count (up to 5)
+          setUnreadCount(Math.min(uniqueItems.length, 5));
+        } else if (newEntriesCount > 0) {
+          // Increment unread count as new notifications arrive
+          setUnreadCount((prev) => prev + newEntriesCount);
+        }
+
+        setRecentNotifications(uniqueItems.slice(0, 15));
       } catch (error) {
         console.error("Notifications unavailable:", error);
         if (!cancelled) setRecentNotifications([]);
@@ -291,15 +338,15 @@ function App() {
     }
 
     refreshNotifications();
-    const interval = setInterval(refreshNotifications, 15000);
+    const interval = setInterval(refreshNotifications, 10000);
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
   }, [currentUserId, checkingSession, habitLogCount]);
 
-  // Local (in-session) notifications first, then milestone notifications from the feeds.
-  const menuItems = [...notifications, ...recentNotifications].slice(0, 8);
+  // Combined notifications: local simulation / in-session events + group feed items
+  const menuItems = [...notifications, ...recentNotifications].slice(0, 15);
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -312,6 +359,8 @@ function App() {
     setRecentNotifications([]);
     setNotifications([]);
     setUnreadCount(0);
+    seenNotificationKeysRef.current.clear();
+    initialLoadDoneRef.current = false;
   }
 
   function goTo(page, options = null) {

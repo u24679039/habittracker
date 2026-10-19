@@ -39,7 +39,6 @@ function SocialTab({ groups = [], userId, apiBase = DEFAULT_API_BASE }) {
             if (!response.ok) return [];
             const data = await response.json();
             return parseFeedEntries(data)
-              .filter((entry) => entry.type === "milestone" && String(entry.userId) === String(userId))
               .map((entry) => ({ ...entry, groupName: group.name }));
           } catch {
             return []; // one group failing shouldn't blank out the others
@@ -52,7 +51,7 @@ function SocialTab({ groups = [], userId, apiBase = DEFAULT_API_BASE }) {
         const merged = results.flat()
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
           .filter((entry) => {
-            const key = `${entry.userId}|${entry.message}|${String(entry.timestamp || "").slice(0, 10)}`;
+            const key = `${entry.groupId || ''}|${entry.userId}|${entry.type}|${entry.message}|${String(entry.timestamp || "")}`;
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
@@ -106,22 +105,33 @@ function SocialTab({ groups = [], userId, apiBase = DEFAULT_API_BASE }) {
                 </span>
               </div>
               <ul className="activity-feed">
-                {groupedNotifications[groupName].map((entry, index) => (
-                  <li key={index} className="activity-feed__item activity-feed__item--milestone">
-                    <span className="activity-feed__avatar" aria-hidden="true">
-                      🔥
-                    </span>
-                    <div className="activity-feed__content">
-                      <p className="activity-feed__message">
-                        <span className="activity-feed__badge">🔥 Milestone</span>
-                        {entry.message}
-                      </p>
-                      <span className="activity-feed__time">
-                        {formatRelativeTime(entry.timestamp)}
+                {groupedNotifications[groupName].map((entry, index) => {
+                  const isMilestone = entry.type === "milestone";
+                  const isHabit = entry.type === "habit_completed";
+                  const avatar = isMilestone ? "🔥" : isHabit ? "✓" : "📣";
+                  const badgeText = isMilestone
+                    ? "🔥 Milestone"
+                    : isHabit
+                    ? "✓ Completed"
+                    : "Update";
+
+                  return (
+                    <li key={index} className={`activity-feed__item activity-feed__item--${entry.type || 'milestone'}`}>
+                      <span className="activity-feed__avatar" aria-hidden="true">
+                        {avatar}
                       </span>
-                    </div>
-                  </li>
-                ))}
+                      <div className="activity-feed__content">
+                        <p className="activity-feed__message">
+                          <span className="activity-feed__badge">{badgeText}</span>
+                          {entry.message}
+                        </p>
+                        <span className="activity-feed__time">
+                          {formatRelativeTime(entry.timestamp)}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
