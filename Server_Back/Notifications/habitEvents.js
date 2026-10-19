@@ -12,14 +12,21 @@ async function recordHabitCompletion(habitId, completedAt = new Date()) {
         const groupIds = await getSharedGroupIds(habit);
         if (!groupIds.length) return;
 
-        // Existing functionality: record the completed habit.
+        // Fetch the user's name so the feed message is human-readable.
+        const user = await prisma.user.findUnique({
+            where: { userId: habit.userId },
+            select: { name: true }
+        });
+        const actorName = user?.name || "Someone";
+
+        // Record the completed habit in every group that shares this habit.
         await prisma.activity.createMany({
             data: groupIds.map(groupId => ({
                 groupId,
                 userId: habit.userId,
                 habitId,
                 activityType: "HABIT_COMPLETED",
-                message: `Completed ${habit.title}`
+                message: `${actorName} completed "${habit.title}"`
             }))
         });
 

@@ -24,8 +24,13 @@ npx prisma migrate reset
 to update prisma clients
 npx prisma generate
 
-!! recreate the DB after clearing 
+!! recreate the DB after clearing
 npx prisma db push
+
+To seed the DB 
+node ./prisma/seed.js 
+or 
+npx prisma db seed
 
 to download necassary npm packages on seperate pc 
 in Client_Front
@@ -36,14 +41,11 @@ npm ci
 npm prisma generate
 
 
-To seed the DB 
-node ./prisma/seed.js 
-or 
-npx prisma db seed
+
 
 
 To push to Gcloud backend cloud
-
+In Server_Back
 gcloud run deploy epe-habit-track `
   --source . `
   --region africa-south1 `

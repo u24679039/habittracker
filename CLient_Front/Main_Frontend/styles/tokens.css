@@ -77,6 +77,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -90,6 +91,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 #root {
@@ -589,7 +591,7 @@ textarea {
 .leave-confirmation-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 1200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -769,13 +771,42 @@ textarea {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
 }
-.notif__title {
+.notif__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   padding: 0.85rem 1.1rem;
   border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.notif__title {
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 600;
+  color: var(--ink);
+}
+.notif__view-all {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--olive);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+.notif__view-all:hover {
+  color: var(--olive-hover);
 }
 .notif__empty {
   padding: 1.25rem 1.1rem;
@@ -1729,6 +1760,7 @@ textarea {
 .group-code-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .invite-code {
@@ -1932,7 +1964,7 @@ textarea {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 60;
+  z-index: 9999;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2050,7 +2082,7 @@ textarea {
     margin-left: auto;
   }
   .page-content {
-    width: calc(100% - 2rem);
+    width: calc(100% - 1.5rem);
     margin-top: var(--space-4);
   }
   .groups-header {
@@ -2073,6 +2105,97 @@ textarea {
   .habit-row__actions-secondary {
     justify-content: flex-start;
   }
+
+  /* Habits Mobile Responsiveness */
+  .habit-app-shell {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+  .habit-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding-bottom: 8px;
+  }
+  .habit-list-header .tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: var(--space-3);
+    padding-bottom: 4px;
+    margin-bottom: -4px;
+  }
+  .habit-list-header .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .habit-list-header .tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .habit-list-header .btn--primary {
+    width: 100%;
+    justify-content: center;
+  }
+  .habit-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .group-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 16px 4px;
+  }
+  .habit-card-title-group {
+    width: 100%;
+  }
+  .habit-card-status {
+    align-self: flex-start;
+  }
+  .group-description {
+    padding: 0 16px 6px;
+  }
+  .group-card-meta {
+    justify-content: flex-start;
+    padding: 8px 16px 14px;
+  }
+  .group-code-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .group-code-actions .small-action-button {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+    min-width: 68px;
+  }
+  .habit-meta-text {
+    word-break: break-word;
+  }
+
+  /* Modal responsive sizing */
+  .modal-backdrop,
+  .leave-confirmation-overlay {
+    padding: 12px;
+  }
+  .modal-panel,
+  .leave-confirmation-modal {
+    max-width: 100%;
+    max-height: 92vh;
+    margin: auto 0;
+  }
+  .modal-panel__header {
+    padding: 16px 16px 0;
+  }
+  .modal-panel__body {
+    padding: 12px 16px 18px;
+  }
 }
 
 @media (max-width: 500px) {
@@ -2089,7 +2212,7 @@ textarea {
   .group-card-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 6px;
   }
   .group-card-meta {
     justify-content: flex-start;

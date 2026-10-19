@@ -7,7 +7,7 @@ import { useState } from "react";
  * displays the generated invitation code after successful creation.
  * Follows the same modal styling as the habits forms.
  ***********************************************************************/
-function GroupCreation({ currentUserId, onClose })
+function GroupCreation({ currentUserId, onClose, onSuccess })
 {
   const [isCreating, setIsCreating] = useState(false);
   const [invitationCode, setInvitationCode] = useState("");
@@ -104,7 +104,7 @@ function GroupCreation({ currentUserId, onClose })
               <p className="field-help">Share this code with the peers you want to invite.</p>
             </div>
             <div className="form-actions">
-              <button type="button" className="btn btn--primary" onClick={onClose}>
+              <button type="button" className="btn btn--primary" onClick={onSuccess || onClose}>
                 Done
               </button>
             </div>

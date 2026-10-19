@@ -103,7 +103,22 @@ function NotificationsMenu({ items = [], unreadCount = 0, onOpen, onViewAll }) {
       {open && (
         <div className="notif__panel">
           <div className="notif__box" role="region" aria-label="Recent notifications">
-            <h2 className="notif__title">Notifications</h2>
+            <div className="notif__header">
+              <h2 className="notif__title">Notifications</h2>
+              {onViewAll && (
+                <button
+                  type="button"
+                  className="notif__view-all"
+                  onClick={() => {
+                    setHovering(false);
+                    setPinned(false);
+                    onViewAll();
+                  }}
+                >
+                  View all notifications
+                </button>
+              )}
+            </div>
             {items.length === 0 ? (
               <p className="notif__empty">You have no recent notifications.</p>
             ) : (
@@ -148,19 +163,6 @@ function NotificationsMenu({ items = [], unreadCount = 0, onOpen, onViewAll }) {
                 })()}
               </div>
             )}
-            {onViewAll && (
-              <button
-                type="button"
-                className="btn btn--text"
-                onClick={() => {
-                  setHovering(false);
-                  setPinned(false);
-                  onViewAll();
-                }}
-              >
-                View all notifications
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -185,18 +187,7 @@ function App() {
   // --- Fix 1: Notification & Group Activity state ---
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [groupActivities, setGroupActivities] = useState(() => [
-    {
-      activityId: "init-1",
-      message: "Shahd logged Running: 5km",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    },
-    {
-      activityId: "init-2",
-      message: "David logged Coding practice: 45 mins",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-    },
-  ]);
+  const [groupActivities, setGroupActivities] = useState([]);
 
   /** Adds a group activity and also mirrors it to the global notifications */
   function addGroupActivity(entry) {
@@ -440,6 +431,7 @@ function App() {
           ) : currentPage === "Habits" ? (
             <HabitManagement
               currentUserId={currentUserId}
+              habitLogCount={habitLogCount}
               onHabitLogged={incrementHabitLogCount}
               navigationOptions={habitNavigationOptions}
               onClearNavigationOptions={() => setHabitNavigationOptions(null)}
