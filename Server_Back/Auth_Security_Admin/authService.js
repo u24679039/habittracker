@@ -70,8 +70,13 @@ async function login(email, password) {
       email: email
     }
   });
-
-  if (!user || !user.passwordHash || typeof user.passwordHash !== "string") {
+  if(!user){
+    return {
+      success: false,
+      message: "User not found, please register an account."
+    };
+  }
+  if ( !user.passwordHash || typeof user.passwordHash !== "string") {
     return {
       success: false,
       message: "Invalid email or password."
@@ -210,7 +215,7 @@ async function deleteAccount(userId) {
       message: "User not found."
     };
   }
-
+  
   await prisma.user.delete({
     where: {
       userId: userId

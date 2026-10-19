@@ -282,28 +282,51 @@ export default function Dashboard({
   }
 
   // Submit in-place log modal
+  // Submit in-place increment log modal and auto-complete if target is met
   async function handleLogHabit(e) {
     e.preventDefault();
     if (!loggingHabit) return;
     setIsLogging(true);
     setModalError('');
+    
     try {
-      const res = await fetch(`/api/habits/${loggingHabit.id}/log`, {
+      const incrementVal = Number(logForm.value);
+      const isNowComplete = (loggingHabit.current + incrementVal) >= loggingHabit.target;
+
+      // 1. Log the increment
+      const res = await fetch(`/api/habits/${loggingHabit.id}/increment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({
-          date: `${logForm.date}T12:00:00.000Z`,
-          value: Number(logForm.value),
-          note: logForm.note.trim(),
+          incrementBy: incrementVal
         }),
       });
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to log completion');
+        throw new Error(data.error || 'Failed to log increment');
       }
+
+      // 2. If the increment hits or exceeds the target, automatically log it as complete
+      if (isNowComplete) {
+        const todayIso = new Date().toISOString().split('T')[0];
+        await fetch(`/api/habits/${loggingHabit.id}/log`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            date: `${todayIso}T12:00:00.000Z`,
+            value: loggingHabit.target, // Ensure the target is officially logged
+            note: 'Target reached via dashboard increment',
+          }),
+        });
+      }
+
       setLoggingHabit(null);
       await loadDashboardData();
       onHabitLogged?.();
@@ -727,7 +750,7 @@ export default function Dashboard({
             onMouseDown={(e) => e.stopPropagation()}
           >
             <header className="modal-panel__header">
-              <h2 id="dashboard-log-habit-title">Log {loggingHabit.name}</h2>
+              <h2 id="dashboard-log-habit-title">Update {loggingHabit.name}</h2>
               <button
                 className="modal-panel__close"
                 type="button"
@@ -740,44 +763,20 @@ export default function Dashboard({
 
             <form className="modal-panel__body form" onSubmit={handleLogHabit}>
               <p className="habit-row__desc">
-                Target: {loggingHabit.target} {loggingHabit.unit}
+                Progress: {loggingHabit.current || 0} / {loggingHabit.target} {loggingHabit.unit}
                 {loggingHabit.isSnoozed && ' (reduced for snooze)'}
               </p>
 
-              <div className="field-row">
-                <label className="field">
-                  Date
-                  <input
-                    name="date"
-                    type="date"
-                    value={logForm.date}
-                    onChange={(e) => setLogForm({ ...logForm, date: e.target.value })}
-                    required
-                  />
-                </label>
-
-                <label className="field">
-                  Completed value ({loggingHabit.unit})
-                  <input
-                    name="value"
-                    type="number"
-                    min="1"
-                    value={logForm.value}
-                    onChange={(e) => setLogForm({ ...logForm, value: e.target.value })}
-                    required
-                  />
-                </label>
-              </div>
-
               <label className="field">
-                Note <span>(optional)</span>
-                <textarea
-                  name="note"
-                  rows="3"
-                  maxLength="500"
-                  value={logForm.note}
-                  onChange={(e) => setLogForm({ ...logForm, note: e.target.value })}
-                  placeholder="Add a note about this log..."
+                Increment by ({loggingHabit.unit})
+                <input
+                  name="value"
+                  type="number"
+                  min="1"
+                  value={logForm.value}
+                  onChange={(e) => setLogForm({ ...logForm, value: e.target.value })}
+                  required
+                  autoFocus
                 />
               </label>
 
@@ -793,7 +792,7 @@ export default function Dashboard({
                   Cancel
                 </button>
                 <button className="btn btn--primary" type="submit" disabled={isLogging}>
-                  {isLogging ? 'Logging...' : 'Log completion'}
+                  {isLogging ? 'Logging...' : 'Log increment'}
                 </button>
               </div>
             </form>
