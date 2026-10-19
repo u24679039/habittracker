@@ -489,6 +489,14 @@ router.post('/api/habits/:id/increment', async (req, res) => {
     try {
         const habit = await getHabitInstance(habitId);
         const newCurrValue = await habit.logIncrement(Number(incrementBy));
+
+        // If the increment just pushed the habit over its target, record the
+        // completion so the activity feed and notifications fire the same way
+        // they do when the user taps "Log completion" directly.
+        if (newCurrValue >= habit.effectiveTargetValue) {
+            await recordHabitCompletion(habitId, new Date());
+        }
+
         res.status(200).json({
             currValue: newCurrValue,
             // This used to come back as `undefined` every single time,

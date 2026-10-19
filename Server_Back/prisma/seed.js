@@ -71,6 +71,9 @@ async function createHabitWithHistory(userId, def) {
       frequency: 'DAILY',
       StatusOfHabit: 'ACTIVE',
       currValue: 0,
+      // Share with all groups by default so habit completions trigger the
+      // activity feed and notifications for group members.
+      sharingMode: def.sharingMode || 'ALL',
     },
   });
 
