@@ -49,7 +49,7 @@ async function recordHabitCompletion(habitId, completedAt = new Date()) {
             where: { userId: habit.userId },
             select: { name: true }
         });
-        const message = buildMilestoneMessage(user?.name || "Someone", milestone);
+        const message = buildMilestoneMessage(user2?.name || "Someone", milestone);
 
         // Serialize concurrent milestone writes through the database.
         // PostgreSQL advisory lock is scoped to this transaction.
