@@ -13,11 +13,11 @@ async function recordHabitCompletion(habitId, completedAt = new Date()) {
         if (!groupIds.length) return;
 
         // Fetch the user's name so the feed message is human-readable.
-        const user = await prisma.user.findUnique({
+        const user1 = await prisma.user.findUnique({
             where: { userId: habit.userId },
             select: { name: true }
         });
-        const actorName = user?.name || "Someone";
+        const actorName = user1?.name || "Someone";
 
         // Record the completed habit in every group that shares this habit.
         await prisma.activity.createMany({
@@ -45,7 +45,7 @@ async function recordHabitCompletion(habitId, completedAt = new Date()) {
         const milestone = checkForMilestone(streak);
         if (milestone === null) return;
 
-        const user = await prisma.user.findUnique({
+        const user2 = await prisma.user.findUnique({
             where: { userId: habit.userId },
             select: { name: true }
         });
